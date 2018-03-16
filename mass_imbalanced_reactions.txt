@@ -1,0 +1,329 @@
+#Rxn;rxnAbbr;imbalance;equation
+205;DABAAT;-1 H;2 h[c] + akg[c] + 24dab[c]  <=> glu_L[c] + aspsa[c] 
+2	h[c]	-2	1	H
+98	akg[c]	-1	4	C5H4O5
+99	glu_L[c]	1	8	C5H8NO4
+228	aspsa[c]	1	7	C4H7NO3
+320	24dab[c]	-1	10	C4H10N2O2
+226;DHNPA;1 H;dhnpt[c]  -> h[c] + 2ahhmp[c] + gcald[c] 
+2	h[c]	1	1	H
+350	dhnpt[c]	-1	13	C9H13N5O4
+351	2ahhmp[c]	1	9	C7H9N5O2
+352	gcald[c]	1	4	C2H4O2
+662;R05224;-1 H;2 atp[c] + h2o[c] + 2 gln_L[c] + hgbyr[c]  -> h[c] + 2 adp[c] + ppi[c] + 2 glu_L[c] + hgbam[c] 
+2	h[c]	1	1	H
+7	atp[c]	-2	12	C10H12N5O13P3
+9	adp[c]	2	12	C10H12N5O10P2
+32	h2o[c]	-1	2	H2O
+86	ppi[c]	1	1	HO7P2
+99	glu_L[c]	2	8	C5H8NO4
+153	gln_L[c]	-2	10	C5H10N2O3
+290	hgbam[c]	1	57	C45H57N6O12
+652	hgbyr[c]	-1	54	C45H54N4O14
+771;EX_34dhbz(e);-5 H, -7 C, -4 O;34dhbz[e]  <=> 
+82	34dhbz[e]	-1	5	C7H5O4
+772;EX_acon_C(e);-3 H, -6 C, -6 O;acon_C[e]  <=> 
+134	acon_C[e]	-1	3	C6H3O6
+773;EX_arg_L(e);-15 H, -6 C, -2 O, -4 N;arg_L[e]  <=> 
+225	arg_L[e]	-1	15	C6H15N4O2
+774;EX_bz(e);-5 H, -7 C, -2 O;bz[e]  <=> 
+248	bz[e]	-1	5	C7H5O2
+775;EX_chols(e);-13 H, -5 C, -4 O, -1 S, -1 N;chols[e]  <=> 
+269	chols[e]	-1	13	C5H13NO4S
+776;EX_cit(e);-5 H, -6 C, -7 O;cit[e]  <=> 
+274	cit[e]	-1	5	C6H5O7
+777;EX_ethso3(e);-5 H, -2 C, -3 O, -1 S;ethso3[e]  <=> 
+404	ethso3[e]	-1	5	C2H5O3S
+778;EX_fe2(e);-1 Fe;fe2[e]  <=> 
+429	fe2[e]	-1	0	Fe
+779;EX_fru(e);-12 H, -6 C, -6 O;fru[e]  <=> 
+436	fru[e]	-1	12	C6H12O6
+780;EX_glc_D(e);-12 H, -6 C, -6 O;glc_D[e]  <=> 
+470	glc_D[e]	-1	12	C6H12O6
+781;EX_glu_L(e);-8 H, -5 C, -4 O, -1 N;glu_L[e]  <=> 
+481	glu_L[e]	-1	8	C5H8NO4
+782;EX_gly(e);-5 H, -2 C, -2 O, -1 N;gly[e]  <=> 
+497	gly[e]	-1	5	C2H5NO2
+783;EX_glyc(e);-8 H, -3 C, -3 O;glyc[e]  <=> 
+491	glyc[e]	-1	8	C3H8O3
+784;EX_his_L(e);-9 H, -6 C, -2 O, -3 N;his_L[e]  <=> 
+526	his_L[e]	-1	9	C6H9N3O2
+785;EX_icit(e);-5 H, -6 C, -7 O;icit[e]  <=> 
+537	icit[e]	-1	5	C6H5O7
+786;EX_isetac(e);-5 H, -2 C, -4 O, -1 S;isetac[e]  <=> 
+552	isetac[e]	-1	5	C2H5O4S
+787;EX_lys_L(e);-15 H, -6 C, -2 O, -2 N;lys_L[e]  <=> 
+563	lys_L[e]	-1	15	C6H15N2O2
+788;EX_mso3(e);-3 H, -1 C, -3 O, -1 S;mso3[e]  <=> 
+579	mso3[e]	-1	3	CH3O3S
+789;EX_na1(e);-1 Na;na1[e]  <=> 
+734	na1[e]	-1	0	Na
+790;EX_pac(e);-7 H, -8 C, -2 O;pac[e]  <=> 
+638	pac[e]	-1	7	C8H7O2
+791;EX_pentso3(e);-11 H, -5 C, -3 O, -1 S;pentso3[e]  <=> 
+665	pentso3[e]	-1	11	C5H11O3S
+792;EX_pro_L(e);-9 H, -5 C, -2 O, -1 N;pro_L[e]  <=> 
+698	pro_L[e]	-1	9	C5H9NO2
+793;EX_quin_kt(e);-11 H, -7 C, -6 O;quin_kt[e]  <=> 
+710	quin_kt[e]	-1	11	C7H11O6
+794;EX_so4(e);-4 O, -1 S;so4[e]  <=> 
+735	so4[e]	-1	0	O4S
+795;EX_taur(e);-7 H, -2 C, -3 O, -1 S, -1 N;taur[e]  <=> 
+742	taur[e]	-1	7	C2H7NO3S
+796;EX_tyr_L(e);-11 H, -9 C, -3 O, -1 N;tyr_L[e]  <=> 
+754	tyr_L[e]	-1	11	C9H11NO3
+797;CYMH;1 H;o2[c] + nadh[c] + cym[c]  -> h2o[c] + nad[c] + cumicoh[c] 
+13	o2[c]	-1	0	O2
+32	h2o[c]	1	2	H2O
+94	nad[c]	1	26	C21H26N7O14P2
+96	nadh[c]	-1	27	C21H27N7O14P2
+777	cym[c]	-1	14	C10H14
+778	cumicoh[c]	1	14	C10H14O
+799;CUMICALDH;-1 H;h2o[c] + nad[c] + cumical[c]  -> h[c] + nadh[c] + cum[c] 
+2	h[c]	1	1	H
+32	h2o[c]	-1	2	H2O
+94	nad[c]	-1	26	C21H26N7O14P2
+96	nadh[c]	1	27	C21H27N7O14P2
+779	cumical[c]	-1	12	C10H12O
+780	cum[c]	1	11	C10H11O2
+802;DHCUMDOX;-1 H;o2[c] + dhcum[c]  -> 2d3c24dien[c] 
+13	o2[c]	-1	0	O2
+782	dhcum[c]	-1	11	C10H11O4
+783	2d3c24dien[c]	1	10	C10H10O6
+803;HCOMODC;1 H;2d3c24dien[c]  -> co2[c] + 2h24dien[c] 
+14	co2[c]	1	0	CO2
+783	2d3c24dien[c]	-1	10	C10H10O6
+784	2h24dien[c]	1	11	C9H11O4
+804;MODIENHY;-1 H;h2o[c] + 2h24dien[c]  -> chpd[c] + isobut[c] 
+32	h2o[c]	-1	2	H2O
+784	2h24dien[c]	-1	11	C9H11O4
+785	chpd[c]	1	5	C5H5O3
+786	isobut[c]	1	7	C4H7O2
+819;HPDIENHY;-1 H;h2o[c] + 2ho24dien[c]  -> ppa[c] + chpd[c] 
+32	h2o[c]	-1	2	H2O
+140	ppa[c]	1	5	C3H5O2
+785	chpd[c]	1	5	C5H5O3
+798	2ho24dien[c]	-1	9	C8H9O4
+820;BIOMASS_F1;-71 H, -40 C, -21 O, -1 P, 0 S, -11 N, 0 Fe;0.0004 nadph[c] + 0.00013 nadp[c] + 45.7318 atp[c] + 6e-06 coa[c] + 45.5608 h2o[c] + 3e-06 succoa[c] + 5e-05 accoa[c] + 0.001 amp[c] + 0.00215 nad[c] + 5e-05 nadh[c] + 0.285 glu_L[c] + 0.235 gtp[c] + 1e-05 fad[c] + 0.239 gln_L[c] + 0.265 asp_L[c] + 0.035 ptrc[c] + 0.495 ala_L[c] + 0.343 arg_L[c] + 0.147 asn_L[c] + 0.0231 pg161[c] + 0.0105 pg181[c] + 0.0006 clpn160[p] + 0.0031 clpn161[p] + 0.0002 clpn180[p] + 0.0014 clpn181[p] + 0.118 met_L[c] + 0.136 utp[c] + 0.214 ctp[c] + 0.05 cys_L[c] + 0.167 lys_L[c] + 0.0231 dctp[c] + 0.003 udpg[c] + 0.262 ser_L[c] + 0.327 gly[c] + 0.0005 hemeO[c] + 0.12 his_L[c] + 0.34 ile_L[c] + 0.585 leu_L[c] + 0.05 5mthf[c] + 0.0148 dttp[c] + 0.0232 dgtp[c] + 0.0143 datp[c] + 0.236 pro_L[c] + 0.0086 pe160[p] + 0.0419 pe161[p] + 0.0028 pe180[p] + 0.019 pe181[p] + 0.0046 pg160[c] + 0.0015 pg180[c] + 0.184 phe_L[c] + 0.133 tyr_L[c] + 0.0005 sheme[c] + 0.232 thr_L[c] + 0.077 trp_L[c] + 0.352 val_L[c] + 0.028 peptido_kt[c]  -> 45.5604 h[c] + 45.5608 adp[c] + 0.7302 ppi[c] + 45.5628 pi[c] 
+2	h[c]	46	1	H
+3	nadph[c]	0	26	C21H26N7O17P3
+5	nadp[c]	0	25	C21H25N7O17P3
+7	atp[c]	-46	12	C10H12N5O13P3
+9	adp[c]	46	12	C10H12N5O10P2
+17	coa[c]	0	32	C21H32N7O16P3S
+32	h2o[c]	-46	2	H2O
+51	succoa[c]	0	35	C25H35N7O19P3S
+78	accoa[c]	0	34	C23H34N7O17P3S
+85	amp[c]	0	12	C10H12N5O7P
+86	ppi[c]	1	1	HO7P2
+92	pi[c]	46	1	HO4P
+94	nad[c]	0	26	C21H26N7O14P2
+96	nadh[c]	0	27	C21H27N7O14P2
+99	glu_L[c]	0	8	C5H8NO4
+104	gtp[c]	0	12	C10H12N5O14P3
+115	fad[c]	0	31	C27H31N9O15P2
+153	gln_L[c]	0	10	C5H10N2O3
+165	asp_L[c]	0	6	C4H6NO4
+169	ptrc[c]	0	14	C4H14N2
+194	ala_L[c]	0	7	C3H7NO2
+218	arg_L[c]	0	15	C6H15N4O2
+229	asn_L[c]	0	8	C4H8N2O3
+259	pg161[c]	0	70	C38H70O10P1
+263	pg181[c]	0	78	C42H78O10P1
+279	clpn160[p]	0	140	C73H140O17P2
+281	clpn161[p]	0	132	C73H132O17P2
+283	clpn180[p]	0	156	C81H156O17P2
+285	clpn181[p]	0	148	C81H148O17P2
+296	met_L[c]	0	11	C5H11NO2S
+299	utp[c]	0	11	C9H11N2O15P3
+300	ctp[c]	0	12	C9H12N3O14P3
+309	cys_L[c]	0	7	C3H7NO2S
+326	lys_L[c]	0	15	C6H15N2O2
+335	dctp[c]	0	12	C9H12N3O13P3
+454	udpg[c]	0	22	C15H22N2O17P2
+461	ser_L[c]	0	7	C3H7NO3
+462	gly[c]	0	5	C2H5NO2
+515	hemeO[c]	0	56	C49H56FeN4O5
+519	his_L[c]	0	9	C6H9N3O2
+542	ile_L[c]	0	13	C6H13NO2
+554	leu_L[c]	-1	13	C6H13NO2
+575	5mthf[c]	0	24	C20H24N7O6
+589	dttp[c]	0	13	C10H13N2O14P3
+590	dgtp[c]	0	12	C10H12N5O13P3
+592	datp[c]	0	12	C10H12N5O12P3
+631	pro_L[c]	0	9	C5H9NO2
+660	pe160[p]	0	74	C37H74N1O8P1
+661	pe161[p]	0	70	C37H70N1O8P1
+663	pe180[p]	0	82	C41H82N1O8P1
+664	pe181[p]	0	78	C41H78N1O8P1
+679	pg160[c]	0	74	C38H74O10P1
+680	pg180[c]	0	82	C42H82O10P1
+681	phe_L[c]	0	11	C9H11NO2
+683	tyr_L[c]	0	11	C9H11NO3
+731	sheme[c]	0	36	C42H36FeN4O16
+744	thr_L[c]	0	9	C4H9NO3
+748	trp_L[c]	0	12	C11H12N2O2
+769	val_L[c]	0	11	C5H11NO2
+799	peptido_kt[c]	0	62	C40H62N8O21
+881;sink_5mthglu_c_;-34 H, -25 C, -12 O, -8 N;5mthglu[c]  <=> 
+581	5mthglu[c]	-1	34	C25H34N8O12
+882;sink_dna5mtc_c_;-19 H, -11 C, -8 O, -1 P, -2 R;dna5mtc[c]  <=> 
+819	dna5mtc[c]	-1	19	C11H19O8PR2
+883;sink_dna_c_;-17 H, -10 C, -8 O, -1 P, -2 R;dna[c]  <=> 
+818	dna[c]	-1	17	C10H17O8PR2
+884;sink_mclPHAg;-1 R;mclPHAg[c]  <=> 
+373	mclPHAg[c]	-1	0	R
+885;sink_pqq_c_;-3 H, -14 C, -8 O, -2 N;pqq[c]  <=> 
+199	pqq[c]	-1	3	C14H3N2O8
+886;sink_pqqh2_c_;-5 H, -14 C, -8 O, -2 N;pqqh2[c]  <=> 
+200	pqqh2[c]	-1	5	C14H5N2O8
+887;sink_thglu_c_;-32 H, -24 C, -12 O, -8 N;thglu[c]  <=> 
+582	thglu[c]	-1	32	C24H32N8O12
+888;DM_AACALD;-6 H, -2 C, -1 O, -1 N;aacald[c]  -> 
+428	aacald[c]	-1	6	C2H6NO
+889;DM_C100mclPHA;-18 H, -10 C, -2 O, -1 R;C100mclPHA[c]  -> 
+372	C100mclPHA[c]	-1	18	C10H18O2R
+890;DM_C120mclPHA;-22 H, -12 C, -2 O, -1 R;C120mclPHA[c]  -> 
+374	C120mclPHA[c]	-1	22	C12H22O2R
+891;DM_C121mclPHA;-20 H, -12 C, -2 O, -1 R;C121mclPHA[c]  -> 
+375	C121mclPHA[c]	-1	20	C12H20O2R
+892;DM_C140mclPHA;-26 H, -14 C, -2 O, -1 R;C140mclPHA[c]  -> 
+376	C140mclPHA[c]	-1	26	C14H26O2R
+893;DM_C141mclPHA;-24 H, -14 C, -2 O, -1 R;C141mclPHA[c]  -> 
+377	C141mclPHA[c]	-1	24	C14H24O2R
+894;DM_C60mclPHA;-10 H, -6 C, -2 O, -1 R;C60mclPHA[c]  -> 
+378	C60mclPHA[c]	-1	10	C6H10O2R
+895;DM_C80mclPHA;-14 H, -8 C, -2 O, -1 R;C80mclPHA[c]  -> 
+379	C80mclPHA[c]	-1	14	C8H14O2R
+896;DM_dad_5;-13 H, -10 C, -3 O, -5 N;dad_5[c]  -> 
+295	dad_5[c]	-1	13	C10H13N5O3
+897;DM_fald;-2 H, -1 C, -1 O;fald[c]  -> 
+411	fald[c]	-1	2	CH2O
+898;DM_mclPHA;-64 H, -36 C, -8 O, -4 R;mclPHA[c]  -> 
+820	mclPHA[c]	-1	64	C36H64O8R4
+899;DM_ppal_c_;-6 H, -3 C, -1 O;ppal[c]  -> 
+821	ppal[c]	-1	6	C3H6O
+900;DM_ptal;-10 H, -5 C, -1 O;ptal[c]  -> 
+426	ptal[c]	-1	10	C5H10O
+902;DM_isobut;-7 H, -4 C, -2 O;isobut[c]  <=> 
+786	isobut[c]	-1	7	C4H7O2
+985;EX_2dhglcn(e);-9 H, -6 C, -7 O;2dhglcn[e]  <=> 
+822	2dhglcn[e]	-1	9	C6H9O7
+986;EX_34dhcinm(e);-7 H, -9 C, -4 O;34dhcinm[e]  <=> 
+823	34dhcinm[e]	-1	7	C9H7O4
+987;EX_3oxoadp(e);-6 H, -6 C, -5 O;3oxoadp[e]  <=> 
+825	3oxoadp[e]	-1	6	C6H6O5
+988;EX_4abut(e);-9 H, -4 C, -2 O, -1 N;4abut[e]  <=> 
+827	4abut[e]	-1	9	C4H9NO2
+989;EX_4hbz(e);-5 H, -7 C, -3 O;4hbz[e]  <=> 
+826	4hbz[e]	-1	5	C7H5O3
+990;EX_T4hcinnm(e);-7 H, -9 C, -3 O;T4hcinnm[e]  <=> 
+877	T4hcinnm[e]	-1	7	C9H7O3
+991;EX_ac(e);-3 H, -2 C, -2 O;ac[e]  <=> 
+828	ac[e]	-1	3	C2H3O2
+992;EX_akg(e);-4 H, -5 C, -5 O;akg[e]  <=> 
+829	akg[e]	-1	4	C5H4O5
+993;EX_asp_L(e);-6 H, -4 C, -4 O, -1 N;asp_L[e]  <=> 
+830	asp_L[e]	-1	6	C4H6NO4
+994;EX_catechol(e);-6 H, -6 C, -2 O;catechol[e]  <=> 
+831	catechol[e]	-1	6	C6H6O2
+995;EX_chol(e);-14 H, -5 C, -1 O, -1 N;chol[e]  <=> 
+833	chol[e]	-1	14	C5H14NO
+996;EX_co2(e);-1 C, -2 O;co2[e]  <=> 
+834	co2[e]	-1	0	CO2
+997;EX_cobalt2(e);-1 Co;cobalt2[e]  <=> 
+836	cobalt2[e]	-1	0	Co
+998;EX_confrl(e);-12 H, -10 C, -3 O;confrl[e]  <=> 
+837	confrl[e]	-1	12	C10H12O3
+999;EX_cys_L(e);-7 H, -3 C, -2 O, -1 S, -1 N;cys_L[e]  <=> 
+839	cys_L[e]	-1	7	C3H7NO2S
+1000;EX_dca(e);-19 H, -10 C, -2 O;dca[e]  <=> 
+840	dca[e]	-1	19	C10H19O2
+1001;EX_ddca(e);-23 H, -12 C, -2 O;ddca[e]  <=> 
+841	ddca[e]	-1	23	C12H23O2
+1002;EX_fer(e);-9 H, -10 C, -4 O;fer[e]  <=> 
+843	fer[e]	-1	9	C10H9O4
+1003;EX_fum(e);-2 H, -4 C, -4 O;fum[e]  <=> 
+845	fum[e]	-1	2	C4H2O4
+1004;EX_ga(e);-5 H, -7 C, -5 O;ga[e]  <=> 
+846	ga[e]	-1	5	C7H5O5
+1005;EX_glcn(e);-11 H, -6 C, -7 O;glcn[e]  <=> 
+848	glcn[e]	-1	11	C6H11O7
+1006;EX_glyald(e);-6 H, -3 C, -3 O;glyald[e]  <=> 
+849	glyald[e]	-1	6	C3H6O3
+1007;EX_glyb(e);-11 H, -5 C, -2 O, -1 N;glyb[e]  <=> 
+850	glyb[e]	-1	11	C5H11NO2
+1008;EX_glyclt(e);-3 H, -2 C, -3 O;glyclt[e]  <=> 
+851	glyclt[e]	-1	3	C2H3O3
+1009;EX_h2o(e);-2 H, -1 O;h2o[e]  <=> 
+852	h2o[e]	-1	2	H2O
+1010;EX_h(e);-1 H;h[e]  <=> 
+855	h[e]	-1	1	H
+1011;EX_hdca(e);-31 H, -16 C, -2 O;hdca[e]  <=> 
+853	hdca[e]	-1	31	C16H31O2
+1012;EX_hxa(e);-11 H, -6 C, -2 O;hxa[e]  <=> 
+854	hxa[e]	-1	11	C6H11O2
+1013;EX_ile_L(e);-13 H, -6 C, -2 O, -1 N;ile_L[e]  <=> 
+856	ile_L[e]	-1	13	C6H13NO2
+1014;EX_lac_D(e);-5 H, -3 C, -3 O;lac_D[e]  <=> 
+842	lac_D[e]	-1	5	C3H5O3
+1015;EX_lac_L(e);-5 H, -3 C, -3 O;lac_L[e]  <=> 
+858	lac_L[e]	-1	5	C3H5O3
+1016;EX_leu_L(e);-13 H, -6 C, -2 O, -1 N;leu_L[e]  <=> 
+857	leu_L[e]	-1	13	C6H13NO2
+1017;EX_mal_L(e);-4 H, -4 C, -5 O;mal_L[e]  <=> 
+859	mal_L[e]	-1	4	C4H4O5
+1018;EX_met_L(e);-11 H, -5 C, -2 O, -1 S, -1 N;met_L[e]  <=> 
+860	met_L[e]	-1	11	C5H11NO2S
+1019;EX_nac(e);-4 H, -6 C, -2 O, -1 N;nac[e]  <=> 
+862	nac[e]	-1	4	C6H4NO2
+1020;EX_nh4(e);-4 H, -1 N;nh4[e]  <=> 
+863	nh4[e]	-1	4	H4N
+1021;EX_no2(e);-2 O, -1 N;no2[e]  <=> 
+864	no2[e]	-1	0	NO2
+1022;EX_o2(e);-2 O;o2[e]  <=> 
+885	o2[e]	-1	0	O2
+1023;EX_octa(e);-15 H, -8 C, -2 O;octa[e]  <=> 
+866	octa[e]	-1	15	C8H15O2
+1024;EX_orn(e);-13 H, -5 C, -2 O, -2 N;orn[e]  <=> 
+867	orn[e]	-1	13	C5H13N2O2
+1025;EX_phe_L(e);-11 H, -9 C, -2 O, -1 N;phe_L[e]  <=> 
+868	phe_L[e]	-1	11	C9H11NO2
+1026;EX_pi(e);-1 H, -4 O, -1 P;pi[e]  <=> 
+869	pi[e]	-1	1	HO4P
+1027;EX_ppa(e);-5 H, -3 C, -2 O;ppa[e]  <=> 
+871	ppa[e]	-1	5	C3H5O2
+1028;EX_ptrc(e);-14 H, -4 C, -2 N;ptrc[e]  <=> 
+872	ptrc[e]	-1	14	C4H14N2
+1029;EX_rib_D(e);-10 H, -5 C, -5 O;rib_D[e]  <=> 
+873	rib_D[e]	-1	10	C5H10O5
+1030;EX_ser_L(e);-7 H, -3 C, -3 O, -1 N;ser_L[e]  <=> 
+874	ser_L[e]	-1	7	C3H7NO3
+1031;EX_spmd(e);-22 H, -7 C, -3 N;spmd[e]  <=> 
+875	spmd[e]	-1	22	C7H22N3
+1032;EX_succ(e);-4 H, -4 C, -4 O;succ[e]  <=> 
+876	succ[e]	-1	4	C4H4O4
+1033;EX_thr_L(e);-9 H, -4 C, -3 O, -1 N;thr_L[e]  <=> 
+879	thr_L[e]	-1	9	C4H9NO3
+1034;EX_tol(e);-8 H, -7 C;tol[e]  <=> 
+881	tol[e]	-1	8	C7H8
+1035;EX_tsul(e);-3 O, -2 S;tsul[e]  <=> 
+882	tsul[e]	-1	0	O3S2
+1036;EX_ttdca(e);-27 H, -14 C, -2 O;ttdca[e]  <=> 
+883	ttdca[e]	-1	27	C14H27O2
+1037;EX_val_L(e);-11 H, -5 C, -2 O, -1 N;val_L[e]  <=> 
+884	val_L[e]	-1	11	C5H11NO2
+1038;EX_vanln(e);-8 H, -8 C, -3 O;vanln[e]  <=> 
+894	vanln[e]	-1	8	C8H8O3
+1039;EX_vanlt(e);-7 H, -8 C, -4 O;vanlt[e]  <=> 
+895	vanlt[e]	-1	7	C8H7O4
+1040;EX_ebzne(e);-10 H, -8 C;ebzne[e]  <=> 
+890	ebzne[e]	-1	10	C8H10
+1041;EX_cym(e);-14 H, -10 C;cym[e]  <=> 
+886	cym[e]	-1	14	C10H14
+1042;EX_cum(e);-11 H, -10 C, -2 O;cum[e]  <=> 
+892	cum[e]	-1	11	C10H11O2
+1043;EX_bzne(e);-6 H, -6 C;bzne[e]  <=> 
+888	bzne[e]	-1	6	C6H6
+1044;EX_h2(e);-2 H;h2[e]  <=> 
+896	h2[e]	-1	2	H2
