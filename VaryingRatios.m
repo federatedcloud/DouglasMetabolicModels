@@ -1,6 +1,9 @@
 LB = load('022118_iNA660.L.brev.mat')
 AP = load('022118_iNA755.A.pom.mat')
 LPm = load('022118_iNA875.L.plan.mat')
+
+
+% TESTING changing reaction bounds
 test=load('L.brev.mat')
 fba_test=optimizeCbModel(test.model)
 
@@ -12,13 +15,14 @@ fba_test=optimizeCbModel(test.model)
 %APc = changeRxnBounds(AP.model,'EX_orn(e)', 5, 'b');
 %LPc = changeRxnBounds(LPm.model,'EX_orn(e)', 5, 'b');
 
-LBc = changeRxnBounds(LB.model,'EX_aacoa(e)', 10, 'b');
-APc = changeRxnBounds(AP.model,'EX_aacoa(e)', 10, 'b');
-LPc = changeRxnBounds(LPm.model,'EX_aacoa(e)', 10, 'b');
+%LBc = changeRxnBounds(LB.model,'EX_aacoa(e)', 10, 'b');
+%APc = changeRxnBounds(AP.model,'EX_aacoa(e)', 10, 'b');
+%LPc = changeRxnBounds(LPm.model,'EX_aacoa(e)', 10, 'b');
 
-fba_LB=optimizeCbModel(LBc)
-fba_AP=optimizeCbModel(APc)
-fba_LP=optimizeCbModel(LPc)
+%fba_LB=optimizeCbModel(LBc)
+%fba_AP=optimizeCbModel(APc)
+%fba_LP=optimizeCbModel(LPc)
+
 
 LB=rmfield(LB.model,'metPubChemID');
 AP=rmfield(AP.model,'metPubChemID');
@@ -32,10 +36,11 @@ multi_model =  createMultipleSpeciesModel({LB; AP; LPm}, {'LB'; 'AP';'LP'}); % c
 
 
 % set-up functions
-rxnBiomass = strcat({'LB'; 'AP';'LP'}, {'LB_GROW';'AP_GROW';'LP_GROW'});  % biomass reaction names
+rxnBiomass = strcat({'LB';'AP';'LP'}, {'LB_GROW';'AP_GROW';'LP_GROW'});  % biomass reaction names
 rxnBiomassId = findRxnIDs(multi_model, rxnBiomass);  % ids
 multi_model.infoCom.spBm = rxnBiomass;  % .spBm for organism biomass reactions
 multi_model.indCom.spBm = rxnBiomassId;
+%multi_model.csense = char('E' * ones(1,numel(multi_model.mets)));
 
 % running steadyCom
 [sol, result, LP, LPminNorm, indLP] = SteadyCom(multi_model)
@@ -68,12 +73,18 @@ options.BMgdw=[1,7,1]
 [sol6, result6, LP6, LPminNorm6, indLP6]=SteadyCom(multi_model,options)
 
 options = struct();
-options.BMgdw=[1,8,1]
+options.BMgdw=[1,8,1]'
 [sol7, result7, LP7, LPminNorm7, indLP7]=SteadyCom(multi_model,options)
 
 %% varying GRfx
 options=struct();
 options.GRfx=[1,0.15]
 [sol8, result8, LP8, LPminNorm8, indLP8]=SteadyCom(multi_model,options)
-%%% varying 
+%% varying BMcon
+
+options=struct();
+options.BMcon=[1 1 1]
+options.BMrhs=[1]
+options.BMcsense=['E']
+[sol9, result9, L98, LPminNorm9, indLP9]=SteadyCom(multi_model,options,algorithm [3])
 
