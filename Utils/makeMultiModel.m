@@ -6,12 +6,23 @@ function multiModel = makeMultiModel(modelKeys, modelMap)
 %   modelMap is a containers.Map data structer, with key names as
 %            indexes and models as values.
 
+  keysSz = size(modelKeys);
+  if keysSz(1) == 1
+    modelKeys = modelKeys';
+    keysSz = size(modelKeys);
+  end
+  assert(keysSz(2) == 1);
+  assert(length(keysSz) == 2);
+
   modelsToSim = cellfun(@(k) modelMap(k), modelKeys, 'UniformOutput', false);
 
           % Adust so that SteadyCom/createMultiSpecies is happy %
+  try
+    modelsToSim = cellfun(@(m) rmfield(m, 'metPubChemID'), modelsToSim, 'UniformOutput',false);
+  catch
+    warning('No field metPubChemID to remove.')
+  end
 
-
-  modelsToSim = cellfun(@(m) rmfield(m, 'metPubChemID'), modelsToSim, 'UniformOutput',false);
   multiModel = createMultipleSpeciesModel(modelsToSim, modelKeys);
   [multiModel.infoCom, multiModel.indCom] = getMultiSpeciesModelId(multiModel, modelKeys);
 
