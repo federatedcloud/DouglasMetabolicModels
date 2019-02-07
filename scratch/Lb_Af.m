@@ -34,23 +34,23 @@ options.algorithm = 3;
 options.BMrhs = [0];
 options.BMcsense = 'E';
 
-options.BMcon = [2 -1]  % VARY biomass constraint here 
+options.BMcon = [2 -1]  % VARY biomass constraint here
 [sol_1_2 result_1_2] = SteadyCom(multi_model, options)
 %[fvaComMin,fvaComMax]=SteadyComFVA(multi_model)
 
-options.BMcon=[1 -99]  % VARY biomass constraint here 
+options.BMcon=[1 -99]  % VARY biomass constraint here
 [sol_99_1 result_99_1] = SteadyCom(multi_model, options)
 
-options.BMcon=[1 -999]  % VARY biomass constraint here 
+options.BMcon=[1 -999]  % VARY biomass constraint here
 [sol_999_1 result_999_1] = SteadyCom(multi_model, options)
 
-options.BMcon=[999 -1]  % VARY biomass constraint here 
+options.BMcon=[999 -1]  % VARY biomass constraint here
 [sol1_1_999 result_1_999] = SteadyCom(multi_model, options)
 
-options.BMcon=[1 -999999]  % VARY biomass constraint here 
+options.BMcon=[1 -999999]  % VARY biomass constraint here
 [sol_999999_1 result_999999_1] = SteadyCom(multi_model, options)
 
-options.BMcon=[999999 -1]  % VARY biomass constraint here 
+options.BMcon=[999999 -1]  % VARY biomass constraint here
 [sol1_1_999999 result_1_999999] = SteadyCom(multi_model, options)
 
 errTol = 1e-7;
