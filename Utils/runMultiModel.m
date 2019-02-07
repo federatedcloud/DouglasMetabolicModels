@@ -8,4 +8,4 @@ function [sol, result] = runMultiModel(multiModel)
   % options.BMrhs = [0];
   % options.BMcsense = 'E';
   % options.BMcon = [2 -1]  % VARY biomass constraint here
-  [sol_1_2 result_1_2] = SteadyCom(multiModel, options)
+  [sol_1_2 result_1_2] = SteadyCom(multiModel, options);

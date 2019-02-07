@@ -15,7 +15,8 @@ function multiModel = makeMultiModel(modelKeys, modelMap)
   multiModel = createMultipleSpeciesModel(modelsToSim, modelKeys);
   [multiModel.infoCom, multiModel.indCom] = getMultiSpeciesModelId(multiModel, modelKeys);
 
-  bioRxns = cellfun(@(m) m.rxns(find(m.c)), modelsToSim);
+  origBioRxns = cellfun(@(m) m.rxns(find(m.c)), modelsToSim);
+  bioRxns = cellfun(@(kn) strjoin(kn, ''), cellzip(modelKeys, origBioRxns), 'UniformOutput', false);
   bioRxnIds = findRxnIDs(multiModel, bioRxns);
 
   multiModel.infoCom.spBm = bioRxns;  % .spBm for organism biomass reactions
