@@ -14,11 +14,11 @@ function multiModel = makeMultiModel(modelKeys, modelMap)
   assert(keysSz(2) == 1);
   assert(length(keysSz) == 2);
 
-  modelsToSim = cellfun(@(k) modelMap(k), modelKeys, 'UniformOutput', false);
+  modelsToSim = cellFlatMap(@(k) modelMap(k), modelKeys);
 
           % Adust so that SteadyCom/createMultiSpecies is happy %
   try
-    modelsToSim = cellfun(@(m) rmfield(m, 'metPubChemID'), modelsToSim, 'UniformOutput',false);
+    modelsToSim = cellFlatMap(@(m) rmfield(m, 'metPubChemID'), modelsToSim);
   catch
     warning('No field metPubChemID to remove.')
   end
@@ -27,7 +27,7 @@ function multiModel = makeMultiModel(modelKeys, modelMap)
   [multiModel.infoCom, multiModel.indCom] = getMultiSpeciesModelId(multiModel, modelKeys);
 
   origBioRxns = cellfun(@(m) m.rxns(find(m.c)), modelsToSim);
-  bioRxns = cellfun(@(kn) strjoin(kn, ''), cellzip(modelKeys, origBioRxns), 'UniformOutput', false);
+  bioRxns = cellFlatMap(@(kn) strjoin(kn, ''), cellzip(modelKeys, origBioRxns));
   bioRxnIds = findRxnIDs(multiModel, bioRxns);
 
   multiModel.infoCom.spBm = bioRxns;  % .spBm for organism biomass reactions
