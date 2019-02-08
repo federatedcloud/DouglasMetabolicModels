@@ -1,11 +1,17 @@
 function [sol, result] = runSteadyCom(multiModel)
 % Convenience wrapper for running SteadyCom for our models
+% INPUT: multiModel
+% OUTPUT: [sol, result]
 
   options=struct();
   options.algorithm = 3;
 
   % We're assuming proportial in this case (make a flag later)
-  % options.BMrhs = [0];
+  %
+  % nSpecies = length(multiModel.infoCom.spAbbr);
+  % options.BMrhs = [nSpecies];
   % options.BMcsense = 'E';
-  % options.BMcon = [2 -1]  % VARY biomass constraint here
+  % bmCon(1:nSpecies) = 1;
+  % options.BMcon = bmCon;
+  
   [sol result] = SteadyCom(multiModel, options);

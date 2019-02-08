@@ -1,2 +1,2 @@
 function out = cellFlatMap(fun, carray)
-  cellfun(fun, carray, 'UniformOutput',false);
+  out = cellfun(fun, carray, 'UniformOutput',false);

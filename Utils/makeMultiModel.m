@@ -23,13 +23,16 @@ function multiModel = makeMultiModel(modelKeys, modelMap)
     warning('No field metPubChemID to remove.')
   end
 
+  modelsToSim
+  modelKeys
   multiModel = createMultipleSpeciesModel(modelsToSim, modelKeys);
   [multiModel.infoCom, multiModel.indCom] = getMultiSpeciesModelId(multiModel, modelKeys);
 
-  origBioRxns = cellfun(@(m) m.rxns(find(m.c)), modelsToSim);
-  bioRxns = cellFlatMap(@(kn) strjoin(kn, ''), cellzip(modelKeys, origBioRxns));
-  bioRxnIds = findRxnIDs(multiModel, bioRxns);
+  origBioRxns = cellfun(@(m) m.rxns(find(m.c)), modelsToSim)
+  bioRxns = cellFlatMap(@(kn) strjoin(kn, ''), cellzip(modelKeys, origBioRxns))
+  bioRxnIds = findRxnIDs(multiModel, bioRxns)
 
+  multiModel.c(bioRxnIds) = 1;
   multiModel.infoCom.spBm = bioRxns;  % .spBm for organism biomass reactions
   multiModel.indCom.spBm = bioRxnIds;
 
