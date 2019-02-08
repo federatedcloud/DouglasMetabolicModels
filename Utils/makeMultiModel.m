@@ -23,16 +23,28 @@ function multiModel = makeMultiModel(modelKeys, modelMap)
     warning('No field metPubChemID to remove.')
   end
 
-  modelsToSim
-  modelKeys
   multiModel = createMultipleSpeciesModel(modelsToSim, modelKeys);
   [multiModel.infoCom, multiModel.indCom] = getMultiSpeciesModelId(multiModel, modelKeys);
 
-  origBioRxns = cellfun(@(m) m.rxns(find(m.c)), modelsToSim)
-  bioRxns = cellFlatMap(@(kn) strjoin(kn, ''), cellzip(modelKeys, origBioRxns))
-  bioRxnIds = findRxnIDs(multiModel, bioRxns)
+  origBioRxns = cellfun(@(m) m.rxns(find(m.c)), modelsToSim);
+  bioRxns = cellFlatMap(@(kn) strjoin(kn, ''), cellzip(modelKeys, origBioRxns));
+  bioRxnIds = findRxnIDs(multiModel, bioRxns);
 
   multiModel.c(bioRxnIds) = 1;
   multiModel.infoCom.spBm = bioRxns;  % .spBm for organism biomass reactions
   multiModel.indCom.spBm = bioRxnIds;
+
+  beforeMisses = findRestoreExcMisses(multiModel);
+  multiModel = restoreExcBounds(multiModel, modelsToSim);
+  afterMisses = findRestoreExcMisses(multiModel);
+  if length(afterMisses) > 0
+    s1 = sprintf('%d unrestored exchange reactions present before ', length(beforeMisses));
+    s2 = sprintf('%d unrestored exchange reactions still present.\n', length(afterMisses));
+    s3 = 'running restoreExcBounds.\n';
+    warning([s1 s2 s3]);
+    disp({'Reaction', 'Reaction Name'});
+    disp({'--------------------------'});
+    disp(horzcat(multiModel.rxns(afterMisses), multiModel.rxnNames(afterMisses)));
+  end
+
 
