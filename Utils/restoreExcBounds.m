@@ -8,7 +8,7 @@ function model_out = restoreExcBounds(multiModel, modelList)
 excIDs = findExcIDs(multiModel);
 endChar = '(';
 for exc = excIDs
-    bounds = []; 
+    bounds = [];
     for modelIdx = 1:length(modelList)
         idxs = findExcIDs(modelList{modelIdx});
         rxns = modelList{modelIdx}.rxns(idxs);
@@ -27,8 +27,11 @@ for exc = excIDs
         if ~isempty(match)
             bounds = modelList{modelIdx}.lb(idxs(match));
             multiModel = changeRxnBounds(multiModel, multiModel.rxns(exc), min(bounds), 'l');
-        else 
-            disp(strcat("Couldn't find a reaction for ", multiModel.rxns(exc)));
+        else
+          % TODO: need to check all input models in batch before warning
+          % TODO: related, can convert this to something with less loops and more cellfun
+          % TODO: to perhaps imrpove performance
+          % disp(strcat("Couldn't find a reaction for ", multiModel.rxns(exc)));
         end
     end
 end
