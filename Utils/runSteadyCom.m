@@ -13,5 +13,8 @@ function [sol, result] = runSteadyCom(multiModel)
   % options.BMcsense = 'E';
   % bmCon(1:nSpecies) = 1;
   % options.BMcon = bmCon;
-  
+
+  origFeasTol = getCobraSolverParams('LP', 'feasTol');
+  changeCobraSolverParams('LP', 'feasTol', 1e-8);
   [sol result] = SteadyCom(multiModel, options);
+  changeCobraSolverParams('LP', 'feasTol', origFeasTol);
