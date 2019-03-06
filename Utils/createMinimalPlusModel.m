@@ -1,28 +1,28 @@
-
+function modelOut = createMinimalPlusModel(multiModel)
 
 % taken from models/5.models.020419/media.xlsx
 
 rxns = {
-  'EX_glu-L(e)',
-  'EX_ile-L(e)',
-  'EX_leu-L(e)',
-  'EX_met-L(e)',
-  'EX_val-L(e)',
-  'EX_nh4(e)',
-  'EX_glc-D(e)',
-  'EX_glyc(e)',
-  'EX_h(e)',
-  'EX_h2o(e)',
-  'EX_o2(e)',
-  'EX_pi(e)',
-  'EX_so4(e)',
-  'EX_h2s(e)',
-  'EX_btn(e)',
-  'EX_nac(e)',
-  'EX_pnto-R(e)',
-  'EX_pydam(e)',
-  'EX_pydxn(e)',
-  'EX_pydx5p(e)'
+  'EX_glu-L[u]',
+  'EX_ile-L[u]',
+  'EX_leu-L[u]',
+  'EX_met-L[u]',
+  'EX_val-L[u]',
+  'EX_nh4[u]',
+  'EX_glc-D[u]',
+  'EX_glyc[u]',
+  'EX_h[u]',
+  'EX_h2o[u]',
+  'EX_o2[u]',
+  'EX_pi[u]',
+  'EX_so4[u]',
+  'EX_h2s[u]',
+  'EX_btn[u]',
+  'EX_nac[u]',
+  'EX_pnto-R[u]',
+  'EX_pydam[u]',
+  'EX_pydxn[u]',
+  'EX_pydx5p[u]'
 };
 
 lower_bounds = {
@@ -48,4 +48,13 @@ lower_bounds = {
   -1
 };
 
-rxnLbMap = containers.Map(rxns, lower_bounds)
+modelOut = multiModel;
+rxnLbMap = containers.Map(rxns, lower_bounds);
+
+excIDs = findExcIDs(modelOut);
+modelOut.lb(excIDs) = 0;
+for rxn = keys(rxnLbMap)
+  rxn = char(rxn);
+  rxnIdx = find(strcmp(rxn, modelOut.rxns));
+  modelOut.lb(rxnIdx) = rxnLbMap(rxn);
+end
