@@ -14,15 +14,17 @@
 % Example: To just show subsets with parents in comps:
 % cellPowerSetFilter(@(x) x, @(x) true, someSet, @(v,pv) {pv,v})
 %
-function [ssVals, comps] = cellPowerSetFilter(fun, pred, carray, compare)
+function [ssVals, comps, memFun] = cellPowerSetFilter(fun, pred, carray, compare)
   setInit = {carray{:}};
+  memFun = memoize(fun);
+  memFun.CacheSize = 2.^(numel(setInit));
   ssVals = {};
   comps = {};
-  valInit = fun(setInit);
+  valInit = memFun(setInit);
   loop(setInit, valInit);
 
   function loop(ssetIn, parentValue)
-    ssVals{end+1} = fun(ssetIn);
+    ssVals{end+1} = memFun(ssetIn);
     comps{end+1} = compare(ssVals{end}, parentValue);
     nSubs = numel(ssetIn);
     if pred(ssVals{end}) && nSubs > 1
