@@ -14,9 +14,9 @@ function pairAnalysis = compareFluxes(childRes, parentRes)
 
   % really we should just be able to use the smaller reaction set, as
   % as it should be a subset of the parent reaction set, so no need for this:
-  % commonRxns = intersect(childRes.model.rxns, parentRes.model.rxns);
-  for ii = 1:numel(childRes.model.rxns)
-    rxn = char(childRes.model.rxns{ii});
+  commonRxns = intersect(childRes.model.rxns, parentRes.model.rxns);
+  for ii = 1:numel(commonRxns)
+    rxn = char(commonRxns{ii});
     if sign(childRFmap(rxn)) ~= sign(parRFmap(rxn))
       rxnsDiff{end+1} = rxn;
       childRxnFlux{end+1} = childRFmap(rxn);
@@ -31,6 +31,6 @@ function pairAnalysis = compareFluxes(childRes, parentRes)
     parNameTbl = strjoin({parName, '_'}, '');
   end
   tbl.Properties.VariableNames = {'Reaction', childName, parNameTbl};
-  pairAnalysis.label = childName;
+  pairAnalysis.label = strjoin({childName, '__vs__', parName}, '');
   pairAnalysis.table = tbl;
 end
