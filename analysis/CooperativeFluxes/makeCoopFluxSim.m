@@ -1,7 +1,7 @@
-function modelRunner = makeCoopFluxSim(modelMap)
+function modelRunner = makeCoopFluxSim(modelMap, mediaType)
   function retVal = makeAndRunModel(modelKeys)
     retVal = struct;
-    multiModel = makeMultiModel(modelKeys, modelMap, 'rich');
+    multiModel = makeMultiModel(modelKeys, modelMap, mediaType);
     [sol, result] = runSteadyCom(multiModel);
     retVal.model = multiModel;
     retVal.sol = sol;
