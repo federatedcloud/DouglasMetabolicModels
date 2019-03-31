@@ -12,7 +12,7 @@ function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
 %                     from other models in no particular order.
 % Authors: Brandon Barker
 
-  mediaTypeOptions = {'rich', 'minimal-merge'};
+  mediaTypeOptions = {'rich', 'minimal-merge', 'minimal-plus'};
 
   keysSz = size(modelKeys);
   if keysSz(1) == 1
@@ -61,6 +61,8 @@ function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
       disp({'--------------------------'});
       disp(horzcat(multiModel.rxns(afterMisses), multiModel.rxnNames(afterMisses)));
     end
+  elseif strcmp(mediaType, 'minimal-plus')
+    multiModel = createMinimalPlusModel(multiModel);
   end
 
 
