@@ -34,14 +34,14 @@ function [ssVals, comps, memFun] = cellPowerSetAllChildFilter(fun, pred, carray,
   end
 
   function loop(ssetIn, parentValue)
-    currentValues = {};
     nSubs = numel(ssetIn);
+    currentValues = cell(1, nSubs);
     for ii = 1:nSubs
       sset = ssetIn;
       sset(ii) = [];
       currentValues{ii} = memFun(sset);
     end
-    predVals = cellfun(pred, currentValues, 'UniformOutput',false);
+    predVals = cellfun(pred, currentValues, 'UniformOutput', false);
     if anyOrAll(childAnyAll, predVals) && nSubs > 1
       for ii = 1:nSubs
         sset = ssetIn;

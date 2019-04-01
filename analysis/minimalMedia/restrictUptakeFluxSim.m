@@ -4,7 +4,7 @@ function modelRunner = restrictUptakeFluxSim(multiModel, rxnSet)
     nDelRxns = numel(rxnsToZero);
     modelDel = multiModel;
     for ii = 1:nDelRxns
-      modelDel = changeRxnBounds(model, rxnList{i}, 0, 'b');
+      modelDel = changeRxnBounds(model, rxnsKept{ii}, 0, 'b');
     end
     [sol, result] = runSteadyCom(modelDel);
     retVal.model = multiModel;
