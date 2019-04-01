@@ -1,4 +1,4 @@
-function modelOut = createMinimalPlusModel(multiModel)
+function [modelOut, rxns, lbs] = createMinimalPlusModel(multiModel)
 
 % taken from models/5.models.020419/media.xlsx
 
@@ -62,7 +62,7 @@ rxns = {
 
 };
 
-lower_bounds = {
+lbs = {
   -5
 , -5
 , -5
@@ -122,7 +122,7 @@ lower_bounds = {
 };
 
 modelOut = multiModel;
-rxnLbMap = containers.Map(rxns, lower_bounds);
+rxnLbMap = containers.Map(rxns, lbs);
 
 excIDs = findExcIDs(modelOut);
 modelOut.lb(excIDs) = 0;

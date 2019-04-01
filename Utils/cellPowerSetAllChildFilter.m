@@ -14,7 +14,7 @@
 % Example: To just show subsets with parents in comps:
 % cellPowerSetFilter(@(x) x, @(x) true, someSet, @(v,pv) {pv,v})
 %
-function [ssVals, comps, memFun] = cellPowerSetFilter(fun, pred, carray, compare)
+function [ssVals, comps, memFun] = cellPowerSetAllChildFilter(fun, pred, carray, compare, childAnyAll)
   setInit = {carray{:}};
   memFun = memoize(fun);
   memFun.CacheSize = 2.^(numel(setInit));
@@ -23,18 +23,34 @@ function [ssVals, comps, memFun] = cellPowerSetFilter(fun, pred, carray, compare
   valInit = memFun(setInit);
   loop(setInit, valInit);
 
+  function bval = anyOrAll(pType, predVals)
+    if strcmp(pType, 'all')
+      bval = all(cell2mat(predVals));
+    elseif strcmp(pType, 'any')
+      bval = any(cell2mat(predVals));
+    else
+      error('pType must be either "any" or "all".')
+    end
+  end
+
   function loop(ssetIn, parentValue)
-    currentValue = memFun(ssetIn);
-    ssVals{end+1} = currentValue;
-    comps{end+1} = compare(currentValue, parentValue);
+    currentValues = {};
     nSubs = numel(ssetIn);
-    if pred(currentValue) && nSubs > 1
+    for ii = 1:nSubs
+      sset = ssetIn;
+      sset(ii) = [];
+      currentValues{ii} = memFun(sset);
+    end
+    predVals = cellfun(pred, currentValues, 'UniformOutput',false);
+    if anyOrAll(childAnyAll, predVals) && nSubs > 1
       for ii = 1:nSubs
         sset = ssetIn;
         sset(ii) = [];
-        loop(sset, currentValue);
+        loop(sset, memFun(sset));
       end
     end
+    ssVals = {ssVals{:}  currentValues{:}};
+    comps{end+1} = compare(currentValues, parentValue);
   end
 
 end
