@@ -21,7 +21,16 @@ function [ssVals, comps, memFun] = cellPowerSetAllChildFilter(fun, pred, carray,
   ssVals = {};
   comps = {};
   valInit = memFun(setInit);
-  loop(setInit, valInit);
+
+  ppool = gcp;
+  poolsize = 0;
+  if ~isempty(ppool)
+    poolsize = ppool.NumWorkers;
+  end
+  disp(strjoin({'pool size is :', num2str(poolsize)}));
+
+  environment = getEnvironment();
+  loop(setInit, valInit, environment);
 
   function bval = anyOrAll(pType, predVals)
     if strcmp(pType, 'all')
@@ -33,10 +42,12 @@ function [ssVals, comps, memFun] = cellPowerSetAllChildFilter(fun, pred, carray,
     end
   end
 
-  function loop(ssetIn, parentValue)
+  function loop(ssetIn, parentValue, cbenv)
     nSubs = numel(ssetIn);
     currentValues = cell(1, nSubs);
-    for ii = 1:nSubs
+    parfor ii = 1:nSubs
+      restoreEnvironment(cbenv);
+      disp(strjoin({'Running simulation of rxn size:', num2str(nSubs-1)}));
       sset = ssetIn;
       sset(ii) = [];
       currentValues{ii} = memFun(sset);
@@ -46,7 +57,7 @@ function [ssVals, comps, memFun] = cellPowerSetAllChildFilter(fun, pred, carray,
       for ii = 1:nSubs
         sset = ssetIn;
         sset(ii) = [];
-        loop(sset, memFun(sset));
+        loop(sset, memFun(sset), cbenv);
       end
     end
     ssVals = {ssVals{:}  currentValues{:}};
