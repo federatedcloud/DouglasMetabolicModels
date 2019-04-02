@@ -23,7 +23,7 @@ function analysis = runAnalysis(multiModel, rxnList, tag)
   gitSha2 = currentGitSha;
   assert(strcmp(gitSha1, gitSha2));
 
-  timestamp = datestr(now,'mmmm-dd-yyyy-HH-MM');
+  timestamp = datestr(now, 'mmmm-dd-yyyy-HH-MM');
   species = strjoin(multiModel.infoCom.spAbbr, '_');
   outFile = strjoin({tag, species, timestamp, gitSha1, '.csv' }, '_');
   cellDataOut = {};

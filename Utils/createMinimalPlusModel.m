@@ -129,7 +129,7 @@ modelOut.lb(excIDs) = 0;
 for rxn = keys(rxnLbMap)
   rxn = char(rxn);
   rxnIdx = find(strcmp(rxn, modelOut.rxns));
-  if numel(rxnIdx) == 1
+  if numel(rxnIdx) ~= 1
     warning(strjoin({'No reaction ', rxn, ' in model' }, ''));
   end
   modelOut.lb(rxnIdx) = rxnLbMap(rxn);

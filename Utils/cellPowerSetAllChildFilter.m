@@ -16,8 +16,9 @@
 %
 function [ssVals, comps, memFun] = cellPowerSetAllChildFilter(fun, pred, carray, compare, childAnyAll)
   setInit = {carray{:}};
-  memFun = memoize(fun);
+  memFun = memoize(fun); % Too much memory?
   memFun.CacheSize = 2.^(numel(setInit));
+  memFun = fun;
   ssVals = {};
   comps = {};
   valInit = memFun(setInit);
@@ -45,23 +46,25 @@ function [ssVals, comps, memFun] = cellPowerSetAllChildFilter(fun, pred, carray,
   function loop(ssetIn, parentValue, cbenv)
     nSubs = numel(ssetIn);
     currentValues = cell(1, nSubs);
-    parfor ii = 1:nSubs
-      restoreEnvironment(cbenv);
-      disp(strjoin({'Running simulation of rxn size:', num2str(nSubs-1)}));
-      sset = ssetIn;
-      sset(ii) = [];
-      currentValues{ii} = memFun(sset);
-    end
-    predVals = cellfun(pred, currentValues, 'UniformOutput', false);
-    if anyOrAll(childAnyAll, predVals) && nSubs > 1
-      for ii = 1:nSubs
+    if nSubs > 0
+      parfor ii = 1:nSubs
+        restoreEnvironment(cbenv);
+        disp(strjoin({'Running simulation of rxn size:', num2str(nSubs-1)}));
+        sset = ssetIn;
+        sset(ii) = [];
+        currentValues{ii} = memFun(sset);
+      end
+      predVals = cellfun(pred, currentValues, 'UniformOutput', false);
+      for ii = find(cell2mat(predVals))
         sset = ssetIn;
         sset(ii) = [];
         loop(sset, memFun(sset), cbenv);
       end
+      %ssVals = {ssVals{:}  currentValues{:}};
+      % We aren't interested in storing individual model values;
+      % besides, it takes too much memory.
+      comps{end+1} = compare(currentValues, parentValue);
     end
-    ssVals = {ssVals{:}  currentValues{:}};
-    comps{end+1} = compare(currentValues, parentValue);
-  end
 
+    end
 end
