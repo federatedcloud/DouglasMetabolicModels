@@ -12,3 +12,14 @@ Run `initDMM` from this (top-level directory) in MATLAB. This will
 add paths to the environment.
 
 Afterward, you still need to run `initCobraToolbox` from your `cobratoolbox` directory.
+
+# Species
+
+The following species are considered as part of the *Drosophila* gut microbiome, and the repository includes
+models for these species:
+
+* *Acetobacter* *fabarum*
+* *Acetobacter* *pomorum*
+* *Acetobacter* *tropicalis*
+* *Lactobacillus* *brevis*
+* *Lactobacillus* *plantarum*
