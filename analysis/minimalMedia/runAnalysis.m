@@ -18,7 +18,11 @@ function analysis = runAnalysis(multiModel, rxnList, tag)
 
   % Print out memFun to make sure it was used as expected.
   memFun
-  memFun.stats
+  if isfield(memFun, 'stats')
+      memFun.stats
+  else
+      disp('no stats field for memFun!');
+  end
 
   gitSha2 = currentGitSha;
   assert(strcmp(gitSha1, gitSha2));
@@ -26,16 +30,21 @@ function analysis = runAnalysis(multiModel, rxnList, tag)
   timestamp = datestr(now, 'mmmm-dd-yyyy-HH-MM');
   species = strjoin(multiModel.infoCom.spAbbr, '_');
   outFile = strjoin({tag, species, timestamp, gitSha1, '.csv' }, '_');
+  numCmps = numel(comparisons);
   cellDataOut = {};
-  for ii = 1:numel(comparisons)
+  for ii = 1:numCmps
     comp = comparisons{ii};
     if comp.minimal
       rxnListStr = strjoin(comp.minRxns, ', ');
       cellDataOut(end+1, :) = {numel(comp.minRxns), rxnListStr};
     end
   end
-  cellDataOut = sortrows(cellDataOut);
-  tableOut = cell2table(cellDataOut);
-  writetable(tableOut, outFile);
+  if numel(cellDataOut) > 0
+    cellDataOut = sortrows(cellDataOut);
+    tableOut = cell2table(cellDataOut);
+    writetable(tableOut, outFile);
+  else
+      disp('No minimal media found');
+  end
 
 end
