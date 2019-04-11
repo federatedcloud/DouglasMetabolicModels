@@ -1,3 +1,7 @@
+% Constructs all combinations of models and compares
+% parent models with child models (model with 1 fewer species).
+%
+% function analysis = runAnalysis(modelMap, mediaType)
 function analysis = runAnalysis(modelMap, mediaType)
 
   scomRunner = makeCoopFluxSim(modelMap, mediaType);
