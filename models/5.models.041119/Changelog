@@ -1,0 +1,54 @@
+11 Apr 2019
+
+    The following changes were applied on top of the last model iteration:
+
+    Constraints applied 04/1/2019
+    Acetobacters (AF,AP,AT)
+    O2tex and O2tpp, oxygen transport via diffusion, directionality, forward only, into cytoplasm
+    ATPS4rpp, ATP synthase, directionality, forward only, to generate ATP
+    CAT, catalase, blocked, to prevent oxygen production from hydrogen peroxide
+    FERO, Fe(II):oxygen oxidoreductase, directionality, forward only, to prevent ATP generation from water and fe3
+
+    reactions added
+    ALAt3, L-alanine transport out via proton antiport
+    CYSt3, L-cysteine transport out via proton antiport
+    HISt3, L-histidine transport out via proton antiport
+    ILEt3, L-isoleucine transport out via proton antiport
+    LEUt3, L-leucine transport out via proton antiport
+    THRt3, L-threonine transport out via proton antiport
+    METt3, L-methionine transport out via proton antiport
+    VALt3, L-valine transport out via proton antiport
+    26DAPMt3, L-meso-2,6-diaminoheptanedioate transport out via proton antiport
+    EX_ala-L(e), L-Alanine exchange
+    EX_cys-L(e), L-Cysteine exchange
+    EX_his-L(e), L-Histidine exchange
+    EX_ile-L(e), L-Isoleucine exchange
+    EX_leu-L(e), L-Leucine exchange
+    EX_thr-L(e), L-Threonine exchange
+    EX_val-L(e), L-Valine exchange
+    EX_26dap-M(e), L-meso-2,6-Diaminoheptanedioate exchange
+
+
+
+    Lactobacilli (LB & LP)
+    O2tex, oxygen transport via diffusion, directionality, forward only, into cytoplasm
+    ATPS3r, ATP synthase, directionality, forward only, to generate ATP
+    CAT, catalase, blocked, to prevent oxygen production from hydrogen peroxide
+
+
+    LP only
+    FERO, Fe(II):oxygen oxidoreductase, directionality, forward only, to prevent ATP generation from water and fe3
+    ALAt2, made reversible
+    ASNt2, made reversible
+    ASPt2, made reversible
+    CYSt2, made reversible
+    GLYt2, made reversible
+    HISt2, replaced with HISt3, L-histidine transport out via proton antiport
+    METt2, made reversible
+    PROt2, made reversible
+    THRt2, made reversible
+
+    reactions added
+    GLNt2, L-glutamine transport in/out via proton symport
+    26DAPMt3, L-meso-2,6-diaminoheptanedioate transport out via proton antiport
+    EX_26dap-M(e), L-meso-2,6-Diaminoheptanedioate exchange
