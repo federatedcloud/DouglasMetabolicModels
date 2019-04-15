@@ -31,15 +31,19 @@ function analysis = runAnalysis(multiModel, rxnList, tag)
   species = strjoin(multiModel.infoCom.spAbbr, '_');
   outFile = strjoin({tag, species, timestamp, gitSha1, '.csv' }, '_');
   numCmps = numel(comparisons);
-  cellDataOut = {};
+  cellDataOutMap = containers.Map();
   for ii = 1:numCmps
     comp = comparisons{ii};
     if comp.minimal
       rxnListStr = strjoin(comp.minRxns, ', ');
-      cellDataOut(end+1, :) = {numel(comp.minRxns), rxnListStr};
+      cellDataOutMap(rxnListStr) = numel(comp.minRxns);
     end
   end
-  if numel(cellDataOut) > 0
+  numMin = numel(cellDataOutMap.length);
+  if numMin > 0
+    cellDataOut = cell(numMin, 2);
+    cellDataOut(:, 2) = cellDataOutMap.keys;
+    cellDataOut(:, 1) = values(cellDataOutMap, cellDataOut(:, 2))
     cellDataOut = sortrows(cellDataOut);
     tableOut = cell2table(cellDataOut);
     writetable(tableOut, outFile);
