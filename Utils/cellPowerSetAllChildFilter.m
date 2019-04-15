@@ -49,9 +49,11 @@ function [ssVals, comps, memFun] = cellPowerSetAllChildFilter(fun, pred, carray,
     if nSubs > 0
       parfor ii = 1:nSubs
         restoreEnvironment(cbenv);
-        disp(strjoin({'Running simulation of rxn size:', num2str(nSubs-1)}));
+        disp(strjoin({'Running simulation of subset size:', num2str(nSubs-1)}));
         sset = ssetIn;
         sset(ii) = [];
+        disp(ssetIn); %DEBUG
+        disp(sset); %DEBUG
         currentValues{ii} = memFun(sset);
       end
       predVals = cellfun(pred, currentValues, 'UniformOutput', false);

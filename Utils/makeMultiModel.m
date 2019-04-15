@@ -65,6 +65,7 @@ function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
     multiModel = createMinimalPlusModel(multiModel);
   end
 
-  multiModel = sensibleThermo(multiModel);
+  % subsumed by builtin constraints in 04/11/19 models
+  % multiModel = sensibleThermo(multiModel);
 
 

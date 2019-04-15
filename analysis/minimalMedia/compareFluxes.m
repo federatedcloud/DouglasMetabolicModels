@@ -9,9 +9,9 @@ function pairAnalysis = compareFluxes(childResList, parentRes)
 
   parGrows = all(parentRes.res.BM);
   assert(parGrows);
-  childrenGrow = all(cellfun(@allGrowing, childResList));
+  isMinimal = all(cellfun(@(f) ~allGrowing(f), childResList));
   pairAnalysis = struct;
-  pairAnalysis.minimal = ~childrenGrow;
+  pairAnalysis.minimal = isMinimal;
   pairAnalysis.minRxns = parentRes.rxnsKept;
 
 end
