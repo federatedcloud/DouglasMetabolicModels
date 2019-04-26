@@ -1,4 +1,4 @@
-function [modelOut, rxns, lbs] = createMinimalPlusModel(multiModel)
+function [modelOut, rxns, lbs] = createMinimalPlusModel(multiModel, removeRxns)
 
 % taken from models/5.models.020419/media.xlsx
 
@@ -123,6 +123,9 @@ lbs = {
 
 modelOut = multiModel;
 rxnLbMap = containers.Map(rxns, lbs);
+if exist('removeRxns', 'var')
+  rxnLbMap.remove(removeRxns);
+end
 
 excIDs = findExcIDs(modelOut);
 modelOut.lb(excIDs) = 0;
