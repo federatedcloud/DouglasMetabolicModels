@@ -15,3 +15,4 @@ organism; the reactions shown are all the transport reactions
 for which there was flux in at least one of the organisms.
  - Each row is one metabolite in the model for which there is an exchange reaction with the environment and some nonzero flux into at least one species.
 
+The Flux for the entire simulation is saved in the corresponding ``*Flux.csv``.
