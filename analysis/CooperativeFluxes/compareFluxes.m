@@ -6,7 +6,6 @@
 function pairAnalysis = compareFluxes(childRes, parentRes)
   fluxActThresh = 1e-6
   childRFmap = containers.Map(childRes.model.rxns, childRes.res.flux);
-  parentRes % FIXME
   parRFmap = containers.Map(parentRes.model.rxns, parentRes.res.flux);
   rxnsDiff = {};
   childRxnFlux = {};

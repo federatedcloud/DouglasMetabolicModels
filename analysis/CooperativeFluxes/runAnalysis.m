@@ -44,7 +44,7 @@ function analysis = runAnalysis(modelMap, mediaType)
     cmpExDiff = comp.cmpEx.parent - comp.cmpEx.child;
     childLost = strjoin(comp.childLostRxns, ';');
     parGained = strjoin(comp.parentGainedRxns, ';');
-    fprintf(fid, '%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n', ...
+    fprintf(fid, '%s,%d,%d,%s,%s,%d,%d,%d,%d,%d,%d\n', ...
       comp.label, comp.size.child, comp.size.parent, ...
       childLost, parGained, ...
       cmpDiff, cmpExDiff, ...
@@ -57,12 +57,19 @@ function analysis = runAnalysis(modelMap, mediaType)
   cmpMap = containers.Map();
   for ii = 1:numel(comparisons)
     comp = comparisons{ii};
+    % parent case
     cmpData = struct;
-    % Just use the parent case:
     cmpData.label = comp.parName;
     cmpData.size = comp.size.parent;
     cmpData.cmp = comp.cmp.parent;
     cmpData.cmpEx = comp.cmpEx.parent;
+    cmpMap(cmpData.label) = cmpData;
+    % child case
+    cmpData = struct;
+    cmpData.label = comp.childName;
+    cmpData.size = comp.size.child;
+    cmpData.cmp = comp.cmp.child;
+    cmpData.cmpEx = comp.cmpEx.child;
     cmpMap(cmpData.label) = cmpData;
   end
   sfName = strjoin({outDirectory, filesep, 'individual', '.csv'}, '');
