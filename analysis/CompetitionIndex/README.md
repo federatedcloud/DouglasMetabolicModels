@@ -1,3 +1,11 @@
+## Important note
+
+The analysis has been integrated into the `CMP_and_CooperativeFluxes` analysis
+due to algorithmic similarities, so see that folder for newer and more
+comprehensive analyses.
+
+## Description
+
 The data generated here relies on the `competitionIndices` function.
 
 It has the following header:  `Met, CompIdx, InfluxIdx, OutfluxIdx, FluxInfo`.
@@ -15,4 +23,4 @@ organism; the reactions shown are all the transport reactions
 for which there was flux in at least one of the organisms.
  - Each row is one metabolite in the model for which there is an exchange reaction with the environment and some nonzero flux into at least one species.
 
-The Flux for the entire simulation is saved in the corresponding ``*Flux.csv``.
+The Flux for the entire simulation is saved in the corresponding `*Flux.csv`.

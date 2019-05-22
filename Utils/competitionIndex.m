@@ -1,8 +1,9 @@
 % For a given flux vector, from a multi-species model, determines the competition
 % index, the interpretation of which is dependent on the number of species
 % present in the model.
-function lineOut = competitionIndex(rxn, model, flux);
+function funOut = competitionIndex(rxn, model, flux);
   rxns = model.rxns;
+  funOut = {'', {}};
 
   function metName = lookupMetName()
     rxnIx = find(strcmp(rxn, rxns));
@@ -34,6 +35,8 @@ function lineOut = competitionIndex(rxn, model, flux);
       outFluxIx = num2str(sum(activeFxs > 0));
       rxnInfo = strjoin(activeRxnList, '; ');
       lineOut = strjoin({rxnMetname, netCIx, inFluxIx, outFluxIx, rxnInfo}, ', ');
+      statsOut = {netCIx, inFluxIx, outFluxIx};
+      funOut = {lineOut, statsOut};
     end
   end
 end
