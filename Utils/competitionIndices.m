@@ -17,12 +17,29 @@ function [dataOut, overlappingInputs] = competitionIndices(model, flux)
   dataOut = strjoin({header, dataOut}, '\n');
 
   % iKeys = cellFlatMap(@(x) num2str(x), num2cell(1:nSpecies));
-  overlappingInputs = containers.Map(0:nSpecies, zeros(1,1+nSpecies));
+  [repOLapStruct{1:nSpecies}] = deal(struct('count', 0, 'list', []));
+  for ii = 1:nSpecies
+    rs = repOLapStruct{ii};
+    rs.org = model.infoCom.spAbbr{ii};
+    repOLapStruct{ii} = rs;
+  end
+  overlappingInputs = containers.Map(model.infoCom.spAbbr, repOLapStruct);
+
   for sIx = 1:numel(dataStats)
     % inFluxIx has position 2, but check this in competitionIndex.m
+    % same for inOrgs being position 4
     ss = dataStats{sIx};
     inFluxIx = str2num(ss{2});
-    overlappingInputs(inFluxIx) = overlappingInputs(inFluxIx) + 1;
+    inOrgs = ss{4};
+    assert(inFluxIx == numel(inOrgs));
+    for oIx = 1:inFluxIx
+      if inFluxIx > 1
+        org = inOrgs{oIx};
+        orgStats = overlappingInputs(org);
+        orgStats.count = orgStats.count + 1;
+        orgStats.list = [orgStats.list (inFluxIx-1)];
+        overlappingInputs(org) = orgStats;
+      end
+    end
   end
-
 end

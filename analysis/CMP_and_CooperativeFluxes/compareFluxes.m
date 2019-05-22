@@ -4,7 +4,7 @@
 % parentRes See childRes.
 %
 function pairAnalysis = compareFluxes(childRes, parentRes)
-  fluxActThresh = 1e-6
+  fluxActThresh = 1e-6;
   childRFmap = containers.Map(childRes.model.rxns, childRes.res.flux);
   parRFmap = containers.Map(parentRes.model.rxns, parentRes.res.flux);
   rxnsDiff = {};
@@ -75,4 +75,9 @@ function pairAnalysis = compareFluxes(childRes, parentRes)
   pairAnalysis.cmpEx.parent = parentActiveExCount;
   pairAnalysis.parentGainedRxns = parentGainedRxns;
   pairAnalysis.childLostRxns = childLostRxns;
+
+  [pairAnalysis.compIndices.child, pairAnalysis.overlappingInputs.child] = ...
+    competitionIndices(childRes.model, childRes.res.flux);
+  [pairAnalysis.compIndices.parent, pairAnalysis.overlappingInputs.parent] = ...
+    competitionIndices(parentRes.model, parentRes.res.flux);
 end

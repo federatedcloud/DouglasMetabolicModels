@@ -83,4 +83,54 @@ function analysis = runAnalysis(modelMap, mediaType)
     fprintf(fid, '%s,%d,%d,%d\n', rec.label, rec.size, rec.cmp, rec.cmpEx);
   end
   fclose(fid);
+
+  % Overlapping inputs analysis (individuals)
+  oInpMap = containers.Map();
+  for ii = 1:numel(comparisons)
+    comp = comparisons{ii};
+    % parent case
+    olapKeys = comp.overlappingInputs.parent.keys;
+    for jj = 1:numel(olapKeys)
+      orgKey = olapKeys{jj};
+      olapInputs = comp.overlappingInputs.parent(orgKey);
+      oInpData = struct;
+      oInpData.label = comp.parName;
+      oInpData.size = comp.size.parent;
+      oInpData.org = olapInputs.org;
+      oInpData.overlap = olapInputs.count;
+      oInpData.degrees = olapInputs.list;
+      oInKey = strjoin({oInpData.label,oInpData.org }, ';');
+      oInpMap(oInKey) = oInpData;
+    end
+    % child case
+    olapKeys = comp.overlappingInputs.child.keys;
+    for jj = 1:numel(olapKeys)
+      orgKey = olapKeys{jj};
+      olapInputs = comp.overlappingInputs.child(orgKey);
+      oInpData = struct;
+      oInpData.label = comp.childName;
+      oInpData.size = comp.size.child;
+      oInpData.org = olapInputs.org;
+      oInpData.overlap = olapInputs.count;
+      oInpData.degrees = olapInputs.list;
+      oInKey = strjoin({oInpData.label,oInpData.org }, ';');
+      oInpMap(oInKey) = oInpData;
+  end
+  olfName = strjoin({outDirectory, filesep, 'influxOverlap', '.csv'}, '');
+  olHeader = strjoin({'Community', '#species', 'Org', 'overlap', 'degree'}, ',');
+  fid = fopen(olfName, 'wt+');
+  fprintf(fid, '%s\n', olHeader);
+  commLabels = keys(oInpMap);
+  for ii = 1:numel(commLabels)
+    label = commLabels{ii};
+    rec = oInpMap(label);
+    degStr = strjoin(                                      ...
+      cellFlatMap(@(x) num2str(x), num2cell(rec.degrees)), ...
+      ';');
+    fprintf(fid, '%s,%d,%s,%d,%s\n', ...
+      rec.label, rec.size, rec.org, rec.overlap, degStr);
+  end
+  fclose(fid);
+
+
 end
