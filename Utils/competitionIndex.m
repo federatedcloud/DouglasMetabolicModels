@@ -1,7 +1,7 @@
 % For a given flux vector, from a multi-species model, determines the competition
 % index, the interpretation of which is dependent on the number of species
 % present in the model.
-function funOut = competitionIndex(rxn, model, flux);
+function funOut = competitionIndex(rxn, model, flux)
   rxns = model.rxns;
   funOut = {'', {}};
 

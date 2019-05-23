@@ -17,6 +17,7 @@ function pairAnalysis = compareFluxes(childRes, parentRes)
   [selExc, selUpt] = findExcRxns(parentRes.model);
   effluxRxns = parentRes.model.rxns(selExc & (~selUpt));
   effluxRxns = filter1d(@(x) startsWith(x,'EX'), effluxRxns);
+  trRxns = findTrRxns(parentRes.model);
 
   % really we should just be able to use the smaller reaction set, as
   % as it should be a subset of the parent reaction set, so no need for this:
@@ -25,6 +26,14 @@ function pairAnalysis = compareFluxes(childRes, parentRes)
   parentActiveCount = 0;
   childActiveExCount = 0;
   parentActiveExCount = 0;
+  childActiveTrCount = 0;
+  parentActiveTrCount = 0;
+  childActiveRxns = {};
+  parentActiveRxns = {};
+  childActiveExRxns = {};
+  parentActiveExRxns = {};
+  childActiveTrRxns = {};
+  parentActiveTrRxns = {};
   for ii = 1:numel(commonRxns)
     rxn = char(commonRxns{ii});
     if sign(childRFmap(rxn)) ~= sign(parRFmap(rxn))
@@ -37,16 +46,26 @@ function pairAnalysis = compareFluxes(childRes, parentRes)
     parIsAct = 0;
     if abs(childRFmap(rxn)) > fluxActThresh
       childActiveCount = childActiveCount + 1;
+      childActiveRxns{end+1} = rxn;
       childIsAct = 1;
       if any(contains(effluxRxns, rxn))
         childActiveExCount = childActiveExCount + 1;
+        childActiveExRxns{end+1} = rxn;
+      elseif any(contains(trRxns, rxn))
+        childActiveTrCount = childActiveTrCount + 1;
+        childActiveTrRxns{end+1} = rxn;
       end
     end
     if abs(parRFmap(rxn)) > fluxActThresh
       parentActiveCount = parentActiveCount + 1;
+      parentActiveRxns{end+1} = rxn;
       parIsAct = 1;
       if any(contains(effluxRxns, rxn))
         parentActiveExCount = parentActiveExCount + 1;
+        parentActiveExRxns{end+1} = rxn;
+      elseif any(contains(trRxns, rxn))
+        parentActiveTrCount = parentActiveTrCount + 1;
+        parentActiveTrRxns{end+1} = rxn;
       end
     end
     if (parIsAct > childIsAct)
@@ -73,6 +92,22 @@ function pairAnalysis = compareFluxes(childRes, parentRes)
   pairAnalysis.cmp.parent = parentActiveCount;
   pairAnalysis.cmpEx.child = childActiveExCount;
   pairAnalysis.cmpEx.parent = parentActiveExCount;
+  pairAnalysis.cmpTr.child = childActiveTrCount;
+  pairAnalysis.cmpTr.parent = parentActiveTrCount;
+
+  pairAnalysis.cmpUniq.child = ...
+    numel(flattenRxnsAcrossSpecies(childActiveRxns, childRes.model));
+  pairAnalysis.cmpUniq.parent = ...
+    numel(flattenRxnsAcrossSpecies(parentActiveRxns, parentRes.model));
+  pairAnalysis.cmpExUniq.child = ...
+    numel(flattenRxnsAcrossSpecies(childActiveExRxns, childRes.model));
+  pairAnalysis.cmpExUniq.parent = ...
+    numel(flattenRxnsAcrossSpecies(parentActiveExRxns, parentRes.model));
+  pairAnalysis.cmpTrUniq.child = ...
+    numel(flattenRxnsAcrossSpecies(childActiveTrRxns, childRes.model));
+  pairAnalysis.cmpTrUniq.parent = ...
+    numel(flattenRxnsAcrossSpecies(parentActiveTrRxns, parentRes.model));
+
   pairAnalysis.parentGainedRxns = parentGainedRxns;
   pairAnalysis.childLostRxns = childLostRxns;
 
