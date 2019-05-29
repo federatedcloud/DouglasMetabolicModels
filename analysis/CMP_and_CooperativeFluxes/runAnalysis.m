@@ -23,6 +23,8 @@ function analysis = runAnalysis(modelMap, mediaType)
   timestamp = datestr(now,'mmmm-dd-yyyy-HH-MM');
   outDirectory = strjoin({mediaType, timestamp, gitSha1}, '_');
   system(strjoin({'mkdir -p', outDirectory}));
+  mfName = strjoin({outDirectory, filesep, 'analysis.mat'}, '');
+  save(mfName, 'analysis');
   for ii = 1:numel(comparisons)
     comp = comparisons{ii};
     fName = strjoin({outDirectory, filesep, comp.label, '.csv'}, '');
