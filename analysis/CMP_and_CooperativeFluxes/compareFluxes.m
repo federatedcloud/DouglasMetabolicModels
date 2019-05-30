@@ -14,9 +14,7 @@ function pairAnalysis = compareFluxes(childRes, parentRes)
   childLostRxns = {};
   pairAnalysis = struct;
 
-  [selExc, selUpt] = findExcRxns(parentRes.model);
-  effluxRxns = parentRes.model.rxns(selExc & (~selUpt));
-  effluxRxns = filter1d(@(x) startsWith(x,'EX'), effluxRxns);
+  effluxRxns = findEffluxRxns(parentRes.model);
   trRxns = findTrRxns(parentRes.model);
 
   % really we should just be able to use the smaller reaction set, as
@@ -75,8 +73,8 @@ function pairAnalysis = compareFluxes(childRes, parentRes)
     end
   end
   tbl = makeTable(rxnsDiff, childRxnFlux, parRxnFlux);
-  childName = strjoin(childRes.model.infoCom.spAbbr, '_');
-  parName = strjoin(parentRes.model.infoCom.spAbbr, '_');
+  childName = commString(childRes.model);
+  parName = commString(parentRes.model);
   pairAnalysis.size.child = numel(childRes.model.infoCom.spAbbr);
   pairAnalysis.size.parent = numel(parentRes.model.infoCom.spAbbr);
   parNameTbl = parName;
