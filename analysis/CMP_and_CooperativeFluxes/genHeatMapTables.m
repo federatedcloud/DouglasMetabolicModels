@@ -33,22 +33,22 @@ function tables = genHeatMapTables(analysis)
   end
 
 
-  function nestedRxnMap = trueRxnMap(rxnGroup, isTrans)
-    nestedRxnMap = containers.Map();
-    groups = keys(rxnGroup);
-    nGroups = numel(groups);
-    for ii = 1:nGroups
-      gRxns = rxnGroup(groups(ii));
-      for jj = 1:numel(gRxns)
-        rxn = gRxns{ii};
-        if isTrans
-          % FIXME
-        else
-          nestedRxnMap(groups(ii)) = {rxn};
-        end
-      end
-    end
-  end
+  ## function nestedRxnMap = trueRxnMap(rxnGroup, isTrans)
+  ##   nestedRxnMap = containers.Map();
+  ##   groups = keys(rxnGroup);
+  ##   nGroups = numel(groups);
+  ##   for ii = 1:nGroups
+  ##     gRxns = rxnGroup(groups(ii));
+  ##     for jj = 1:numel(gRxns)
+  ##       rxn = gRxns{ii};
+  ##       if isTrans
+  ##         % FIXME
+  ##       else
+  ##         nestedRxnMap(groups(ii)) = {rxn};
+  ##       end
+  ##     end
+  ##   end
+  ## end
 
   function tblOut = genHMTable(rxnGroup, isTrans)
 
