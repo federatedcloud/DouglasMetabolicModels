@@ -7,50 +7,50 @@
 % Can sort single cell "vectors":
 %
 % >> tmpStrs = {'asf', 'asd', '123', 'xyz', 'za', 'ab', 'aa', 'aac'}
-% 
+%
 % tmpStrs =
-% 
+%
 %   1×8 cell array
-% 
+%
 %     'asf'    'asd'    '123'    'xyz'    'za'    'ab'    'aa'    'aac'
-% 
+%
 % >> sortByColFun({@(x) numel(x), @(x) x}, [1, 1], tmpStrs)
-% 
+%
 % ans =
-% 
+%
 %   1×8 cell array
-% 
+%
 %     'aa'    'ab'    'za'    '123'    'aac'    'asd'    'asf'    'xyz'
-% 
-% 
+%
+%
 %
 %
 %  Can also use with multiple columns: here we sort the food type first by
 %  length then by alphanumeric sorting (both are on column 2)
 %
 % >> C = {5 'cereal' 110 'C+'; 12 'pizza' 140 'B';  23 'salmon' 367 'A'; 2 'cookies' 160 'D'}
-% 
+%
 % C =
-% 
+%
 %   4×4 cell array
-% 
+%
 %     [ 5]    'cereal'     [110]    'C+'
-%     [12]    'pizza'      [140]    'B' 
-%     [23]    'salmon'     [367]    'A' 
-%     [ 2]    'cookies'    [160]    'D' 
-% 
+%     [12]    'pizza'      [140]    'B'
+%     [23]    'salmon'     [367]    'A'
+%     [ 2]    'cookies'    [160]    'D'
+%
 % >> sortByColFun({@(x) numel(x), @(x) x}, [2 2], C)
-% 
+%
 % ans =
-% 
+%
 %   4×4 cell array
-% 
-%     [12]    'pizza'      [140]    'B' 
+%
+%     [12]    'pizza'      [140]    'B'
 %     [ 5]    'cereal'     [110]    'C+'
-%     [23]    'salmon'     [367]    'A' 
-%     [ 2]    'cookies'    [160]    'D' 
-% 
-% 
+%     [23]    'salmon'     [367]    'A'
+%     [ 2]    'cookies'    [160]    'D'
+%
+%
 
 function sorted = sortByColFun(sfuns, colsIn, cellIn)
   cellSz = size(cellIn);
