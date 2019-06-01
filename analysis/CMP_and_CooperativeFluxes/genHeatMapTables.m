@@ -30,7 +30,6 @@ function tables = genHeatMapTables(analysis)
     function excRxnIds = excMultiSub(rxnIds, multiModel)
       rxnIdsMMT = cellFlatMap(@(r) strrep(r, '(e)', '[u]'), rxnIds);
       rxnIxsMMT = cell2mat(cellFlatMap(@(r) find(strcmp(r, multiModel.rxns)), rxnIdsMMT));
-      rxnIxsMMT
       rxnIxsMM = filter1d(@(r) r > 0, rxnIxsMMT);
       excRxnIds = cellFlatMap(@(r) cellHead(multiModel.rxns(r)), num2cell(rxnIxsMM));
     end
@@ -52,6 +51,27 @@ function tables = genHeatMapTables(analysis)
       for ii = 1:numel(mVals)
         iiRxns = mVals{ii};
         numRxns = numRxns + numel(iiRxns);
+      end
+    end
+
+    function newIxMap = rxnIxToRowIx(rIxMap)
+      ixSets = values(rIxMap);
+      allIx = [];
+      for ii = 1:numel(ixSets)
+        ixSet = ixSets{ii};
+        allIx = union(allIx, ixSet);
+      end
+
+      newIxMap = rIxMap;
+      gKeys = keys(newIxMap);
+      for ii = 1:numel(gKeys)
+        gKey = gKeys{ii};
+        ixSet = newIxMap(gKey);
+        for jj = 1:numel(ixSet)
+          ix = ixSet(jj);
+          ixSet(jj) = find(ix == allIx);
+        end
+        newIxMap(gKey) = ixSet;
       end
     end
 
@@ -93,9 +113,9 @@ function tables = genHeatMapTables(analysis)
       commGroupMap(commStr) = orgCommKeys;
     end % of for ii = 1:nOrgs
 
-    nComOrgKeys = numel(keys(fluxMap));
+    nComOrgKeys = numel(keys(fluxMap))
 
-    nFluxes = countRxnsInIdMap(rxnIdMap);
+    nFluxes = countRxnsInIdMap(rxnGroups)
     nRows = nFluxes + 2; % + community label + org label
     nCols = nComOrgKeys + 2; % + group label + rxn label
 
@@ -103,6 +123,7 @@ function tables = genHeatMapTables(analysis)
     comms = sortByColFun({@(x) numel(x), @(x) x}, [1, 1], keys(commGroupMap));
     nComs = numel(comms);
     fluxPos = 2; % Header columns occupy cols 1 & 2, so start below at 3.
+    rowIxMap = rxnIxToRowIx(rxnIxMap);
     for ii = 1:nComs
       comm = comms{ii};
       orgCommKeys = sortByColFun( ...
@@ -111,10 +132,10 @@ function tables = genHeatMapTables(analysis)
       for jj = 1:nOrgs
         fluxPos = fluxPos + 1;
         orgComKey = orgCommKeys{jj};
-        cellTbl(rxnIxMap(orgComKey), fluxPos) = num2cell(fluxMap(orgComKey));
+        max(rowIxMap(orgComKey)) % FIXME
+        cellTbl(rowIxMap(orgComKey), fluxPos) = num2cell(fluxMap(orgComKey));
       end
     end % of for ii = 1:nComs
   end % of genHMTable
-
 
 end
