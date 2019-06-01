@@ -122,13 +122,15 @@ function tables = genHeatMapTables(analysis)
       for jj = 1:nOrgs
         fluxPos = fluxPos + 1;
         orgComKey = orgCommKeys{jj};
+        cellTbl(1, fluxPos) = {comm};
+        cellTbl(2, fluxPos) = {orgPart(orgComKey)};
         fluxes = fluxMap(orgComKey);
         rxnIxs = rxnIxMap(orgComKey);
         rowIxMap = rxnIxToRowIx(rxnIxs);
         for kk = 1:numel(fluxes)
           rxnIx = rxnIxs(kk);
           rows = rowIxMap(rxnIx);
-          cellTbl(rows, fluxPos) = num2cell(fluxes(kk));
+          cellTbl(2 + rows, fluxPos) = num2cell(fluxes(kk));
         end
       end
     end % of for ii = 1:nComs
