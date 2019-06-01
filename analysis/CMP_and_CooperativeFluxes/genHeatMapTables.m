@@ -54,24 +54,15 @@ function tables = genHeatMapTables(analysis)
       end
     end
 
-    function newIxMap = rxnIxToRowIx(rIxMap)
-      ixSets = values(rIxMap);
-      allIx = [];
-      for ii = 1:numel(ixSets)
-        ixSet = ixSets{ii};
-        allIx = union(allIx, ixSet);
-      end
+    % Maps rxn idx to row set
+    function newIxMap = rxnIxToRowIx(rxnIxs)
+      rowIxs = [];
 
-      newIxMap = rIxMap;
-      gKeys = keys(newIxMap);
-      for ii = 1:numel(gKeys)
-        gKey = gKeys{ii};
-        ixSet = newIxMap(gKey);
-        for jj = 1:numel(ixSet)
-          ix = ixSet(jj);
-          ixSet(jj) = find(ix == allIx);
-        end
-        newIxMap(gKey) = ixSet;
+      newIxMap = containers.Map('KeyType', 'double', 'ValueType', 'any');
+      for ii = 1:numel(rxnIxs)
+        ixOrig = rxnIxs(ii);
+        ixMatches = find(ixOrig == rxnIxs);
+        newIxMap(ixOrig) = ixMatches;
       end
     end
 
@@ -123,7 +114,6 @@ function tables = genHeatMapTables(analysis)
     comms = sortByColFun({@(x) numel(x), @(x) x}, [1, 1], keys(commGroupMap));
     nComs = numel(comms);
     fluxPos = 2; % Header columns occupy cols 1 & 2, so start below at 3.
-    rowIxMap = rxnIxToRowIx(rxnIxMap);
     for ii = 1:nComs
       comm = comms{ii};
       orgCommKeys = sortByColFun( ...
@@ -132,10 +122,18 @@ function tables = genHeatMapTables(analysis)
       for jj = 1:nOrgs
         fluxPos = fluxPos + 1;
         orgComKey = orgCommKeys{jj};
-        max(rowIxMap(orgComKey)) % FIXME
-        cellTbl(rowIxMap(orgComKey), fluxPos) = num2cell(fluxMap(orgComKey));
+        fluxes = fluxMap(orgComKey);
+        rxnIxs = rxnIxMap(orgComKey);
+        rowIxMap = rxnIxToRowIx(rxnIxs);
+        for kk = 1:numel(fluxes)
+          rxnIx = rxnIxs(kk);
+          rows = rowIxMap(rxnIx);
+          cellTbl(rows, fluxPos) = num2cell(fluxes(kk));
+        end
       end
     end % of for ii = 1:nComs
+
+    assert(all(size(cellTbl) == [nRows nCols]));
   end % of genHMTable
 
 end
