@@ -135,6 +135,19 @@ function tables = genHeatMapTables(analysis)
       end
     end % of for ii = 1:nComs
 
+    rowPos = 2; % skip 2 rows with column headers
+    groupNames = keys(rxnGroups);
+    for ii = 1:numel(groupNames)
+      groupName = groupNames{ii};
+      rxnsInGrp = rxnGroups(groupName);
+      for jj = 1:numel(rxnsInGrp)
+        rowPos = rowPos + 1;
+        rxnId = rxnsInGrp{jj};
+        cellTbl(rowPos, 1) = {groupName};
+        cellTbl(rowPos, 2) = {rxnId};
+      end
+    end
+
     assert(all(size(cellTbl) == [nRows nCols]));
   end % of genHMTable
 
