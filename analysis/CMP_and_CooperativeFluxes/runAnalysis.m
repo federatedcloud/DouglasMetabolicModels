@@ -158,5 +158,11 @@ function analysis = runAnalysis(modelMap, mediaType)
   end
   fclose(fid);
 
+  % Write heatmaps
+  heatMapTbls = genHeatMapTables(analysis);
+  exHeatFName = strjoin({outDirectory, filesep, 'heatmap_exchange.csv'}, '');
+  writetable(cell2table(heatMapTbls.exchange), exHeatFName, 'WriteVariableNames', false);
+  transHeatFName = strjoin({outDirectory, filesep, 'heatmap_trans.csv'}, '');
+  writetable(cell2table(heatMapTbls.trans), transHeatFName, 'WriteVariableNames', false);
 
 end
