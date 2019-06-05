@@ -10,6 +10,7 @@ function tables = genHeatMapTables(analysis)
   exRxnGroups = readRxnGroups('../../models/ex_reaction.groups_052919.csv');
   combinedKeys = union(keys(trRxnGroups), keys(exRxnGroups));
   combinedRxnGroup = containers.Map();
+  modelMap = containers.Map();
   for ci = 1:numel(combinedKeys)
     gKey = combinedKeys{ci};
     combinedRxnGroup(gKey) = ...
@@ -17,9 +18,26 @@ function tables = genHeatMapTables(analysis)
   end
 
   tables.trans = genHMTable(trRxnGroups, true);
-  tables.exchange = genHMTable(exRxnGroups, false);
+  tables.exchange = genHMTable(exRxnGroups, false); % FIXME
 
   function cellTbl = genHMTable(rxnGroups, isTrans)
+
+    nFluxes = countRxnsInIdMap(rxnGroups);
+
+    groupNames = keys(rxnGroups);
+    groupHeaders = cell(nFluxes, 1);
+    rxnHeaders = cell(nFluxes, 1);
+    rowPos = 0;
+    for ii = 1:numel(groupNames)
+      groupName = groupNames{ii};
+      rxnsInGrp = rxnGroups(groupName);
+      for jj = 1:numel(rxnsInGrp)
+        rowPos = rowPos + 1;
+        rxnId = rxnsInGrp{jj};
+        groupHeaders(rowPos) = {groupName};
+        rxnHeaders(rowPos) = {rxnId};
+      end
+    end
 
     function trRxnsFnd = trCatRxns(rxns, org, multiModel)
       tentativeRxns = cellFlatMap(@(r) strjoin({org, r}, ''), rxns);
@@ -53,12 +71,46 @@ function tables = genHeatMapTables(analysis)
       end
     end
 
+    function tnmap = makeNormRxnMap(multiModel)
+      tnmap = containers.Map();
+      for ri = 1:numel(multiModel.rxns)
+        rId = multiModel.rxns{ri};
+        choppedRxn = extractAfterMulti(rId, multiModel.infoCom.spAbbr);
+        exSCRxn = strrep(rId, '[u]', '(e)');
+        tentativeRxns = {rId, choppedRxn, exSCRxn};
+        canonIxs = [];
+        for ti = 1:numel(tentativeRxns)
+          cIxMaybe = find(strcmp(tentativeRxns{ti}, rxnHeaders));
+          if cIxMaybe > 0
+            canonIxs(end+1) = cIxMaybe;
+          end
+        end
+        for rci = 1:numel(canonIxs)
+          cIx = canonIxs(rci);
+          if contains(rId, 'O2tex')
+            disp({'BEG', rId, rxnHeaders{cIx}, 'END'}); % FIXME
+          end
+          tnmap(rId) = rxnHeaders{cIx};
+        end
+      end
+      % tnmap_keys = keys(tnmap) % FIXME
+      % tnmap_values = values(tnmap) % FIXME
+    end
+
     % Maps rxn idx to row set
-    function newIxMap = rxnIxToRowIx(rxnIxs)
+    function newIxMap = rxnIxToRowIx(rxnIxs, multiModel)
+      normMap =  makeNormRxnMap(multiModel);
       newIxMap = containers.Map('KeyType', 'double', 'ValueType', 'any');
       for zi = 1:numel(rxnIxs)
         ixOrig = rxnIxs(zi);
-        ixMatches = find(ixOrig == rxnIxs);
+        rId = multiModel.rxns{ixOrig};
+        rowRxn = '';
+        try % FIXME
+          rowRxn = normMap(rId);
+        catch
+          disp(strjoin({'Rxn not found: ', rId}, ''));
+        end
+        ixMatches = find(strcmp(rowRxn, rxnHeaders));
         newIxMap(ixOrig) = ixMatches;
       end
     end
@@ -73,6 +125,7 @@ function tables = genHeatMapTables(analysis)
       afVal = analysis.fvalues{simIx};
       nOrgs = numel(afVal.model.infoCom.spAbbr);
       commStr = commString(afVal.model);
+      modelMap(commStr) = afVal.model;
       orgCommKeys = cell(1, nOrgs);
       for ii = 1:nOrgs
         org = afVal.model.infoCom.spAbbr{ii};
@@ -103,7 +156,6 @@ function tables = genHeatMapTables(analysis)
 
     nComOrgKeys = numel(keys(fluxMap));
 
-    nFluxes = countRxnsInIdMap(rxnGroups);
     nRows = nFluxes + 2; % + community label + org label
     nCols = nComOrgKeys + 2; % + group label + rxn label
 
@@ -111,6 +163,7 @@ function tables = genHeatMapTables(analysis)
     comms = sortByColFun({@(x) numel(x), @(x) x}, [1, 1], keys(commGroupMap));
     nComs = numel(comms);
     fluxPos = 2; % Header columns occupy cols 1 & 2, so start below at 3.
+    max_row_ix = 0; % FIXME
     for ii = 1:nComs
       comm = comms{ii};
       orgCommKeys = sortByColFun( ...
@@ -123,27 +176,23 @@ function tables = genHeatMapTables(analysis)
         cellTbl(2, fluxPos) = {orgPart(orgComKey)};
         fluxes = fluxMap(orgComKey);
         rxnIxs = rxnIxMap(orgComKey);
-        rowIxMap = rxnIxToRowIx(rxnIxs);
+        rowIxMap = rxnIxToRowIx(rxnIxs, modelMap(comm));
+        max_row_ix_tmp = max(cell2mat(values(rowIxMap))); % FIXME
+        if max_row_ix_tmp > max_row_ix % FIXME
+          max_row_ix = max_row_ix_tmp;  % FIXME
+        end  % FIXME
         for kk = 1:numel(fluxes)
           rxnIx = rxnIxs(kk);
           rows = rowIxMap(rxnIx);
           cellTbl(2 + rows, fluxPos) = num2cell(fluxes(kk));
         end
+        % return; % FIXME
       end
     end % of for ii = 1:nComs
+    max_row_ix = max_row_ix % FIXME
 
-    rowPos = 2; % skip 2 rows with column headers
-    groupNames = keys(rxnGroups);
-    for ii = 1:numel(groupNames)
-      groupName = groupNames{ii};
-      rxnsInGrp = rxnGroups(groupName);
-      for jj = 1:numel(rxnsInGrp)
-        rowPos = rowPos + 1;
-        rxnId = rxnsInGrp{jj};
-        cellTbl(rowPos, 1) = {groupName};
-        cellTbl(rowPos, 2) = {rxnId};
-      end
-    end
+    cellTbl(3:end, 1) = groupHeaders;
+    cellTbl(3:end, 2) = rxnHeaders;
 
     assert(all(size(cellTbl) == [nRows nCols]));
   end % of genHMTable
