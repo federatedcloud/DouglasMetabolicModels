@@ -10,8 +10,8 @@ function tables = genHeatMapTables(analysis)
   exRxnGroups = readRxnGroups('../../models/ex_reaction.groups_052919.csv');
   combinedKeys = union(keys(trRxnGroups), keys(exRxnGroups));
   combinedRxnGroup = containers.Map();
-  for ii = 1:numel(combinedKeys)
-    gKey = combinedKeys{ii};
+  for ci = 1:numel(combinedKeys)
+    gKey = combinedKeys{ci};
     combinedRxnGroup(gKey) = ...
       union(getOrEmpty(@() trRxnGroups(gKey)),  getOrEmpty(@() exRxnGroups(gKey)));
   end
@@ -22,8 +22,7 @@ function tables = genHeatMapTables(analysis)
   function cellTbl = genHMTable(rxnGroups, isTrans)
 
     function trRxnsFnd = trCatRxns(rxns, org, multiModel)
-      nRxns = numel(rxns);
-      tentativeRxns = cellFlatMap(@(r) strjoin({'AF', r}, ''), rxns);
+      tentativeRxns = cellFlatMap(@(r) strjoin({org, r}, ''), rxns);
       trRxnsFnd = filter1d(@(r) r > 0, findRxnIDs(multiModel, tentativeRxns));
     end
 
@@ -48,19 +47,17 @@ function tables = genHeatMapTables(analysis)
     function numRxns = countRxnsInIdMap(idMap)
       numRxns = 0;
       mVals = values(idMap);
-      for ii = 1:numel(mVals)
-        iiRxns = mVals{ii};
+      for zi = 1:numel(mVals)
+        iiRxns = mVals{zi};
         numRxns = numRxns + numel(iiRxns);
       end
     end
 
     % Maps rxn idx to row set
     function newIxMap = rxnIxToRowIx(rxnIxs)
-      rowIxs = [];
-
       newIxMap = containers.Map('KeyType', 'double', 'ValueType', 'any');
-      for ii = 1:numel(rxnIxs)
-        ixOrig = rxnIxs(ii);
+      for zi = 1:numel(rxnIxs)
+        ixOrig = rxnIxs(zi);
         ixMatches = find(ixOrig == rxnIxs);
         newIxMap(ixOrig) = ixMatches;
       end
@@ -104,9 +101,9 @@ function tables = genHeatMapTables(analysis)
       commGroupMap(commStr) = orgCommKeys;
     end % of for ii = 1:nOrgs
 
-    nComOrgKeys = numel(keys(fluxMap))
+    nComOrgKeys = numel(keys(fluxMap));
 
-    nFluxes = countRxnsInIdMap(rxnGroups)
+    nFluxes = countRxnsInIdMap(rxnGroups);
     nRows = nFluxes + 2; % + community label + org label
     nCols = nComOrgKeys + 2; % + group label + rxn label
 
