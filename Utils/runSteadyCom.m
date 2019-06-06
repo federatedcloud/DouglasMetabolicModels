@@ -35,8 +35,9 @@ nSpecies = length(multiModel.infoCom.spAbbr);
 %
 % So instead, we opt for setting individual small constraints,
 % which seems to work well:
+
 options.BMcon = diag(ones(nSpecies, 1));
-options.BMrhs = repmat(0.01, nSpecies, 1)'
+options.BMrhs = repmat(0.0001, nSpecies, 1)'
 options.BMcsense = [strjoin(repmat({'G'}, nSpecies, 1), '')];
 
 
