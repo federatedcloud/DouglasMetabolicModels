@@ -4,5 +4,5 @@
 function writeCTable(varargin)
   assert(strcmp(class(varargin{1}), 'char'));
   tbl = makeTable(varargin{2:end});
-  writetable(tbl, varargin{1});
+  writetable(tbl, varargin{1}, 'WriteVariableNames', false);
 end
