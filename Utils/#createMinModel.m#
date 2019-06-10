@@ -21,17 +21,19 @@ rxns = {
   'EX_ni2[u]',
   'EX_o2[u]',
   'EX_pi[u]',
+  'EX_so4[u]',
   'EX_zn2[u]',
   % Fist tier didnt work, trying more reactions:
 
+  'EX_ptrc[u]',
+  'EX_h2s[u]',
+  'EX_spmd[u]',
   'EX_glyc[u]',
   'EX_4ahmmp[u]',
+  'EX_5mthf[u]',
   'EX_btn[u]',
   'EX_dhpt[u]',
-  'EX_dxyl5p[u]',
-  'EX_nac[u]',
-  'EX_pnto-R[u]',
-  'EX_pydx5p[u]'
+ '
 };
 
 lbs = {
@@ -55,10 +57,17 @@ lbs = {
   -1,
   -20,
   -1,
+  -5,
   -1,
 
    % Second tier (blue)
   -5,
+  -5,
+  -5,
+  -5,
+  -1,
+  -1,
+  -1,
   -1,
   -1,
   -1,
