@@ -1,0 +1,18 @@
+data=importdata('dros.comm1.xlsx')
+reaction.count=data.data(1:12,1:4);
+comm.change=data.textdata(1,2:end)
+boxplot(reaction.count,comm.change)
+a = get(get(gca,'children'),'children');
+t = get(a,'tag');
+box1 = a();
+set(box1, 'Color', 'k');
+set(box1, 'LineWidth', 2);
+ylabel('proportion of total rxn changed')
+xlabel('community composition change')
+title(sprintf('%s', data.textdata{2,1}))
+set(gca,'FontSize',16)
+set(gca,'color','none')
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6 4])
+file_name = sprintf('%s', data.textdata{2,1})
+print(file_name,'-djpeg','-r100')
+clear;clc
