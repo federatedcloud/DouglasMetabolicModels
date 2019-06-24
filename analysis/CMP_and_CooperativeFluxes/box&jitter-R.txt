@@ -1,0 +1,9 @@
+my.data=read.table("clipboard",head =T)
+attach(my.data)
+boxplot(yvar~xfact,data=my.data,ylab="community metabolic potential",xlab="community size",outpch=NA)
+stripchart(yvar~xfact,data=my.data,vertical=TRUE,method="jitter",pch=21, col="red",bg="yellow",add=TRUE)
+tapply(yvar,xfact,mean)
+tapply(yvar,sfact,sd)
+tapply(yvar,xfact,lenght)
+sem=tapply(yvar,xfact,sd)/sqrt(tapply(yvar,sfact,length))
+sem
