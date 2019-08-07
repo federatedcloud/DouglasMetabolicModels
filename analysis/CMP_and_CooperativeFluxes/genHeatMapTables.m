@@ -6,8 +6,8 @@
 % Only transport reactions and efflux-exchange reactions are considered.
 %
 function tables = genHeatMapTables(analysis)
-  trRxnGroups = readRxnGroups('../../models/u_trans_rxn.groups_060719.csv');
-  exRxnGroups = readRxnGroups('../../models/ex_reaction.groups_052919.csv');
+  trRxnGroups = readRxnGroups('../../models/u_trans_rxns_080719.csv');
+  exRxnGroups = readRxnGroups('../../models/exchange_rxns_080719.csv');
   combinedKeys = union(keys(trRxnGroups), keys(exRxnGroups));
   combinedRxnGroup = containers.Map();
   modelMap = containers.Map();
