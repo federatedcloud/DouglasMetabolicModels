@@ -4,3 +4,6 @@
 \.\#*
 \#*
 .~lock*
+
+*GR*thread*.mat
+*GR*_parInfo.mat
