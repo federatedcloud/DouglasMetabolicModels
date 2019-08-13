@@ -1,12 +1,11 @@
-function [minFlux, maxFlux, minFD, maxFD, GRvector, result, LP] = runSteadyComFVA(multiModel, simName, otherOpts);
+function [minFlux, maxFlux, minFD, maxFD, GRvector, result, LP] = runSteadyComFVA(multiModel, otherOpts);
 
   defOpts = steadyComDefs(multiModel);
   options = defOpts;
-  if nargin > 2
+  if nargin > 1
     options = mergeStructs(defOpts, otherOpts); % TODO: semicolon
   end
 
-  options.saveFVA = simName;
   options.saveFre = 0.05;
   options.threads = 0;
 
