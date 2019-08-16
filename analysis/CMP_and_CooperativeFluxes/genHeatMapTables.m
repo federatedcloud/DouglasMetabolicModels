@@ -45,7 +45,7 @@ function tables = genHeatMapTables(analysis)
     end
 
     function excRxnIds = excMultiSub(rxnIds, multiModel)
-      rxnIdsMMT = cellFlatMap(@(r) strrep(r, '(e)', '[u]'), rxnIds);
+      rxnIdsMMT = cellFlatMap(@(r) regexprep(r, '_e$', '[u]'), rxnIds);
       rxnIxsMMT = cell2mat(cellFlatMap(@(r) find(strcmp(r, multiModel.rxns)), rxnIdsMMT));
       rxnIxsMM = filter1d(@(r) r > 0, rxnIxsMMT);
       excRxnIds = cellFlatMap(@(r) cellHead(multiModel.rxns(r)), num2cell(rxnIxsMM));
@@ -76,7 +76,7 @@ function tables = genHeatMapTables(analysis)
       for ri = 1:numel(multiModel.rxns)
         rId = multiModel.rxns{ri};
         choppedRxn = extractAfterMulti(rId, multiModel.infoCom.spAbbr);
-        exSCRxn = strrep(rId, '[u]', '(e)');
+        exSCRxn = strrep(rId, '[u]', '_e');
         tentativeRxns = {rId, choppedRxn, exSCRxn};
         canonIxs = [];
         for ti = 1:numel(tentativeRxns)
