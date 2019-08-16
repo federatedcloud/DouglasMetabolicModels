@@ -120,9 +120,17 @@ function tables = genHeatMapTables(analysis)
     rxnIdMap = containers.Map();
     rxnIxMap = containers.Map();
 
+    fvalsMap = containers.Map();
+    for simIx = 1:numel(analysis.fvalues);
+      fVal = analysis.fvalues{simIx};
+      commKey = commString(fVal.model);
+      fvalsMap(commKey) = fVal;
+    end
+    fValsUniq = values(fvalsMap);
+
     commGroupMap = containers.Map();
-    for simIx = 1:numel(analysis.fvalues)
-      afVal = analysis.fvalues{simIx};
+    for simIx = 1:numel(fValsUniq)
+      afVal = fValsUniq{simIx};
       nOrgs = numel(afVal.model.infoCom.spAbbr);
       commStr = commString(afVal.model);
       modelMap(commStr) = afVal.model;
@@ -163,7 +171,6 @@ function tables = genHeatMapTables(analysis)
     comms = sortByColFun({@(x) numel(x), @(x) x}, [1, 1], keys(commGroupMap));
     nComs = numel(comms);
     fluxPos = 2; % Header columns occupy cols 1 & 2, so start below at 3.
-    max_row_ix = 0; % FIXME
     for ii = 1:nComs
       comm = comms{ii};
       orgCommKeys = sortByColFun( ...
@@ -177,19 +184,13 @@ function tables = genHeatMapTables(analysis)
         fluxes = fluxMap(orgComKey);
         rxnIxs = rxnIxMap(orgComKey);
         rowIxMap = rxnIxToRowIx(rxnIxs, modelMap(comm));
-        max_row_ix_tmp = max(cell2mat(values(rowIxMap))); % FIXME
-        if max_row_ix_tmp > max_row_ix % FIXME
-          max_row_ix = max_row_ix_tmp;  % FIXME
-        end  % FIXME
         for kk = 1:numel(fluxes)
           rxnIx = rxnIxs(kk);
           rows = rowIxMap(rxnIx);
           cellTbl(2 + rows, fluxPos) = num2cell(fluxes(kk));
         end
-        % return; % FIXME
       end
     end % of for ii = 1:nComs
-    max_row_ix = max_row_ix % FIXME
 
     cellTbl(3:end, 1) = groupHeaders;
     cellTbl(3:end, 2) = rxnHeaders;
