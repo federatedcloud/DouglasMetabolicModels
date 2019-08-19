@@ -1,9 +1,12 @@
-function [sol, result] = runSteadyCom(multiModel)
+function [sol, result, LP, LPminNorm] = runSteadyCom(multiModel, options)
 
-  options = steadyComDefs(multiModel);
+  defOpts = steadyComDefs(multiModel);
+  if nargin < 2
+    options  = defOpts;
+  end
 
   origFeasTol = getCobraSolverParams('LP', 'feasTol');
   changeCobraSolverParams('LP', 'feasTol', 1e-8);
-  [sol result] = SteadyCom(multiModel, options);
+  [sol result LP LPminNorm] = SteadyCom(multiModel, options);
   changeCobraSolverParams('LP', 'feasTol', origFeasTol);
 end
