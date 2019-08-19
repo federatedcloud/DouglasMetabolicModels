@@ -192,37 +192,42 @@ while ~isempty(J)
     allB = [allB; -opt];                                        %#ok<AGROW>
     allcsense = [allcsense;repmat('E',numel(allB) - nB,1)];      %#ok<AGROW>
 
-    for k = J(:)'
-        f = zeros(length(allL),1); f(k) = -1;
-        [dummy,opt,conv] = easyLP(f,allA,allB,allL,allU,allcsense);
-        if conv
-            vL = max(-opt,L(k));
-        else
-            vL = L(k);
-        end
-        [dummy,opt,conv] = easyLP(-f,allA,allB,allL,allU,allcsense);
-        if conv
-            vU = min(opt,U(k));
-        else
-            vU = U(k);
-        end
-        if abs(vL) < param.epsilon
-            vL = 0;
-        end
-        if abs(vU) < param.epsilon
-            vU = 0;
-        end
-        vM = (vL + vU)/2;
-        if abs(vM) < param.epsilon
-            vM = 0;
-        end
-        if abs(vU - vL) < param.epsilon
-            vL = (1-sign(vM)* param.flexTol)*vM;
-            vU = (1+sign(vM)* param.flexTol)*vM;
-        end
-        L(k) = vL;
-        U(k) = vU;
+    Ltmp = nan(numel(J(:)), 1);
+    Utmp = nan(numel(J(:)), 1);
+    parfor kInd = 1:numel(J(:))
+      k = J(kInd);
+      f = zeros(length(allL),1); f(k) = -1;
+      [dummy,opt,conv] = easyLP(f,allA,allB,allL,allU,allcsense);
+      if conv
+          vL = max(-opt,L(k));
+      else
+          vL = L(k);
+      end
+      [dummy,opt,conv] = easyLP(-f,allA,allB,allL,allU,allcsense);
+      if conv
+          vU = min(opt,U(k));
+      else
+          vU = U(k);
+      end
+      if abs(vL) < param.epsilon
+          vL = 0;
+      end
+      if abs(vU) < param.epsilon
+          vU = 0;
+      end
+      vM = (vL + vU)/2;
+      if abs(vM) < param.epsilon
+          vM = 0;
+      end
+      if abs(vU - vL) < param.epsilon
+          vL = (1-sign(vM)* param.flexTol)*vM;
+          vU = (1+sign(vM)* param.flexTol)*vM;
+      end
+      Ltmp(kInd) = vL;
+      Utmp(kInd) = vU;
     end
+    L(J(:)) = Ltmp;
+    U(J(:)) = Utmp;
 
     v = nan(size(L));
     J = (U-L < param.epsilon);
