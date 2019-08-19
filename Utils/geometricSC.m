@@ -1,4 +1,6 @@
-% FIXME: does not converge.
+% FIXME: does not converge. Also, parfor creates a slightly different algorithm
+% FIXME: once idential solutions are detected in n and n+1 iterations, should
+% FIXME: drop to single threaded somehow.
 % We attempt to just use SteadyCom for finding the initial optimal values here
 % and also use SteadyComFVA to identify a range of optimal growth values and smaller
 % initial solution space
@@ -91,10 +93,7 @@ if param.printLevel
 end
 
 L0 = L; U0 = U;
-Ltmp = nan(numel(J(:)), 1);
-Utmp = nan(numel(J(:)), 1);
-parfor kInd = 1:numel(J(:))
-  k = J(kInd);
+for k = J(:)''
   f = zeros(length(v),1); f(k) = -1;
   [dummy,opt,conv] = easyLP(f,A,b,L0,U0,csense);
   if conv
@@ -121,11 +120,9 @@ parfor kInd = 1:numel(J(:))
       vL = (1-sign(vM)* param.flexTol)*vM;
       vU = (1+sign(vM)* param.flexTol)*vM;
   end
-  Ltmp(kInd) = vL;
-  Utmp(kInd) = vU;
+  L(k) = vL;
+  U(k) = vU;
 end
-L(J(:)) = Ltmp;
-U(J(:)) = Utmp;
 
 v = nan(size(L));
 J = (U-L < param.epsilon);
@@ -182,8 +179,19 @@ while ~isempty(J)
     allL = [allL;zeros(2*a2,1)];                                %#ok<AGROW>
     allU = [allU;inf*ones(2*a2,1)];                             %#ok<AGROW>
 
-    [v,opt,conv] = easyLP(f,allA,allB,allL,allU,allcsense);
-    if ~conv, disp('error: no convergence'); flux = (L+U)/2; return; end
+    % [v,opt,conv] = easyLP(f,allA,allB,allL,allU,allcsense);
+    % if ~conv, disp('error: no convergence'); flux = (L+U)/2; return; end
+    conv = false;
+    origFeasTol = getCobraSolverParams('LP', 'feasTol');
+    feasTol = origFeasTol;
+    while ~conv
+      [v,opt,conv] = easyLP(f,allA,allB,allL,allU,allcsense);
+      if ~conv, warning('no convergence, raising feasTol:');
+        feasTol = feasTol*2
+        changeCobraSolverParams('LP', 'feasTol', feasTol);
+      end
+    end
+    changeCobraSolverParams('LP', 'feasTol', origFeasTol);
 
     opt = ceil(-opt/eps)*eps;
     Z(n) = opt;                                                 %#ok<AGROW>
@@ -192,10 +200,7 @@ while ~isempty(J)
     allB = [allB; -opt];                                        %#ok<AGROW>
     allcsense = [allcsense;repmat('E',numel(allB) - nB,1)];      %#ok<AGROW>
 
-    Ltmp = nan(numel(J(:)), 1);
-    Utmp = nan(numel(J(:)), 1);
-    parfor kInd = 1:numel(J(:))
-      k = J(kInd);
+    for k = J(:)
       f = zeros(length(allL),1); f(k) = -1;
       [dummy,opt,conv] = easyLP(f,allA,allB,allL,allU,allcsense);
       if conv
@@ -223,11 +228,9 @@ while ~isempty(J)
           vL = (1-sign(vM)* param.flexTol)*vM;
           vU = (1+sign(vM)* param.flexTol)*vM;
       end
-      Ltmp(kInd) = vL;
-      Utmp(kInd) = vU;
+      L(k) = vL;
+      U(k) = vU;
     end
-    L(J(:)) = Ltmp;
-    U(J(:)) = Utmp;
 
     v = nan(size(L));
     J = (U-L < param.epsilon);
