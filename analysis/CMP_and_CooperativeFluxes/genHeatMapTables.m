@@ -18,7 +18,7 @@ function tables = genHeatMapTables(analysis)
   end
 
   tables.trans = genHMTable(trRxnGroups, true);
-  tables.exchange = genHMTable(exRxnGroups, false); % FIXME
+  tables.exchange = genHMTable(exRxnGroups, false);
 
   function cellTbl = genHMTable(rxnGroups, isTrans)
 

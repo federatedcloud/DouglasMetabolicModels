@@ -3,7 +3,7 @@ function [minFlux, maxFlux, minFD, maxFD, GRvector, result, LP] = runSteadyComFV
   defOpts = steadyComDefs(multiModel);
   options = defOpts;
   if nargin > 1
-    options = mergeStructs(defOpts, otherOpts); % TODO: semicolon
+    options = mergeStructs(defOpts, otherOpts);
   end
 
   options.saveFre = 0.05;
