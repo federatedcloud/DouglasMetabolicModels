@@ -1,7 +1,12 @@
-function options = steadyComDefs(multiModel)
+function options = steadyComDefs(multiModel, allGrowing)
 % Convenience wrapper for running SteadyCom for our models
 % INPUT: multiModel
 % OUTPUT: [sol, result]
+
+  allGrow = true;
+  if nargin > 1
+    allGrow = allGrowing;
+  end
 
   options = struct();
   options.algorithm = 3;
@@ -36,6 +41,9 @@ nSpecies = length(multiModel.infoCom.spAbbr);
 % So instead, we opt for setting individual small constraints,
 % which seems to work well:
 
-options.BMcon = diag(ones(nSpecies, 1));
-options.BMrhs = repmat(0.0001, nSpecies, 1)';
-options.BMcsense = [strjoin(repmat({'G'}, nSpecies, 1), '')];
+if allGrow
+  disp("all grow");
+  options.BMcon = diag(ones(nSpecies, 1));
+  options.BMrhs = repmat(0.0001, nSpecies, 1)';
+  options.BMcsense = [strjoin(repmat({'G'}, nSpecies, 1), '')];
+end

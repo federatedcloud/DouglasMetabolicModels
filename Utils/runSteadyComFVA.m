@@ -1,9 +1,9 @@
 function [minFlux, maxFlux, minFD, maxFD, GRvector, result, LP] = runSteadyComFVA(multiModel, otherOpts);
 
-  defOpts = steadyComDefs(multiModel);
-  options = defOpts;
   if nargin > 1
-    options = mergeStructs(defOpts, otherOpts);
+    options = otherOpts;
+  else
+    options = steadyComDefs(multiModel);
   end
 
   options.saveFre = 0.05;

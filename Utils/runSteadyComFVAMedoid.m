@@ -4,6 +4,8 @@ function [sol, resMed, LP, LPminNorm] = runSteadyComFVAMedoid(multiModel, otherO
 
   nSpecies = length(multiModel.infoCom.spAbbr);
 
+  epsilon = 1e-6;
+
   if nargin > 1
     fvaOpts = otherOpts;
   else
@@ -11,27 +13,18 @@ function [sol, resMed, LP, LPminNorm] = runSteadyComFVAMedoid(multiModel, otherO
   end
 
   fvaOpts.rxnNameList = multiModel.rxns;
-  fvaOpts.rxnFluxList = multiModel.rxns;
   % ^ we record all fluxes for determining medoid flux
   fvaOpts.minNorm = 1;
 
   [minFlux, maxFlux, minFD, maxFD, GRvector, result, LP] = runSteadyComFVA(multiModel, fvaOpts);
+  vBMmedoid = medoid([minFD maxFD])
+  % vBMmedoid = [0.0001, 0.0001, 0.0003, 0.0149, 0.8249]'; % For testing
+  bmRHS = vBMmedoid/sum(vBMmedoid) - epsilon;
+  fvaOpts.BMcon = diag(ones(nSpecies, 1));
+  fvaOpts.BMrhs = bmRHS;
+  fvaOpts.BMcsense = [strjoin(repmat({'G'}, nSpecies, 1), '')];
 
-
-  sol = struct();
-  sol.LP = LP;
-
-  resMed = struct();
-  resMed.GRmax = GRvector;
-  resMed.flux = medoid([minFD maxFD]);
-  resMed.vBM = resMed.flux(find(multiModel.c));
-  resMed.BM = resMed.vBM / GRvector;
-
-  resMed.minFlux = minFlux;
-  resMed.maxFlux = maxFlux;
-  resMed.minFD = minFD;
-  resMed.maxFD = maxFD;
-  resMed.resultSC = result;
+  [sol, resMed, LP, LPminNorm] = runSteadyCom(multiModel, fvaOpts);
 
   sol.time = toc;
 
