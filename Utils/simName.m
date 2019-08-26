@@ -1,3 +1,4 @@
 function opts = simName(name, opts)
-  opts.saveFVA = name;
+  % opts.saveFVA = name;
+  return
 end

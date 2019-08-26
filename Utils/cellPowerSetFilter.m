@@ -24,13 +24,16 @@ function [ssVals, comps, memFun] = cellPowerSetFilter(fun, pred, carray, compare
   loop(setInit, valInit);
 
   function loop(ssetIn, parentValue)
+    disp("hello from loop")
     currentValue = memFun(ssetIn);
     ssVals{end+1} = currentValue;
     comps{end+1} = compare(currentValue, parentValue);
-    nSubs = numel(ssetIn);
+    nSubs = numel(ssetIn)
+    disp("pred")
+    pred(currentValue)
     if pred(currentValue) && nSubs > 1
       for ii = 1:nSubs
-        sset = ssetIn;
+        sset = ssetIn
         sset(ii) = [];
         loop(sset, currentValue);
       end
