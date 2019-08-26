@@ -19,11 +19,13 @@ function [sol, resMed, LP, LPminNorm] = runSteadyComFVAMedoid(multiModel, otherO
   [minFlux, maxFlux, minFD, maxFD, GRvector, result, LP] = runSteadyComFVA(multiModel, fvaOpts);
   vBMmedoid = medoid([minFD maxFD])
   % vBMmedoid = [0.0001, 0.0001, 0.0003, 0.0149, 0.8249]'; % For testing
-  bmRHS = vBMmedoid/sum(vBMmedoid) - epsilon;
-  fvaOpts.BMcon = diag(ones(nSpecies, 1));
-  fvaOpts.BMrhs = bmRHS;
-  fvaOpts.BMcsense = [strjoin(repmat({'G'}, nSpecies, 1), '')];
-
+  mu = sum(vBMmedoid);
+  if mu > 0
+    bmRHS = vBMmedoid/mu - epsilon;
+    fvaOpts.BMcon = diag(ones(nSpecies, 1));
+    fvaOpts.BMrhs = bmRHS;
+    fvaOpts.BMcsense = [strjoin(repmat({'G'}, nSpecies, 1), '')];
+  end
   [sol, resMed, LP, LPminNorm] = runSteadyCom(multiModel, fvaOpts);
 
   sol.time = toc;

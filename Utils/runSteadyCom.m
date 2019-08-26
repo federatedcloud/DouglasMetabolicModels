@@ -1,8 +1,9 @@
-function [sol, result, LP, LPminNorm] = runSteadyCom(multiModel, options)
+function [sol, result, LP, LPminNorm] = runSteadyCom(multiModel, optsIn)
 
-  defOpts = steadyComDefs(multiModel);
   if nargin < 2
-    options  = defOpts;
+    options  = steadyComDefs(multiModel);
+  else
+    options = optsIn;
   end
 
   % options.minNorm = 1;
