@@ -3,7 +3,7 @@
 %           one fewer species than the parentRes.
 % parentRes See childRes.
 %
-function pairAnalysis = compareFluxes(childRes, parentRes)
+function pairAnalysis = compareFluxes(childRes, parentRes, setDEBUG)
   fluxActThresh = 1e-6;
   childRFmap = containers.Map(childRes.model.rxns, childRes.res.flux);
   parRFmap = containers.Map(parentRes.model.rxns, parentRes.res.flux);
@@ -16,6 +16,11 @@ function pairAnalysis = compareFluxes(childRes, parentRes)
 
   effluxRxns = findEffluxRxns(parentRes.model);
   trRxns = findTrRxns(parentRes.model);
+
+  DEBUG = false;
+  if (nargin > 2)
+    DEBUG = setDEBUG;
+  end
 
   % really we should just be able to use the smaller reaction set, as
   % as it should be a subset of the parent reaction set, so no need for this:
@@ -32,6 +37,10 @@ function pairAnalysis = compareFluxes(childRes, parentRes)
   parentActiveExRxns = {};
   childActiveTrRxns = {};
   parentActiveTrRxns = {};
+
+  if DEBUG
+    trRxnFID = fopen('trRxnFluxes.csv', 'w');
+  end
   for ii = 1:numel(commonRxns)
     rxn = char(commonRxns{ii});
     if sign(childRFmap(rxn)) ~= sign(parRFmap(rxn))
@@ -46,22 +55,25 @@ function pairAnalysis = compareFluxes(childRes, parentRes)
       childActiveCount = childActiveCount + 1;
       childActiveRxns{end+1} = rxn;
       childIsAct = 1;
-      if any(contains(effluxRxns, rxn))
+      if any(strcmp(rxn, effluxRxns))
         childActiveExCount = childActiveExCount + 1;
         childActiveExRxns{end+1} = rxn;
-      elseif any(contains(trRxns, rxn))
+      elseif any(strcmp(rxn, trRxns))
         childActiveTrCount = childActiveTrCount + 1;
         childActiveTrRxns{end+1} = rxn;
+        if DEBUG
+          fprintf(trRxnFID, '%s\t%d\n', rxn, childRFmap(rxn));
+        end
       end
     end
     if abs(parRFmap(rxn)) > fluxActThresh
       parentActiveCount = parentActiveCount + 1;
       parentActiveRxns{end+1} = rxn;
       parIsAct = 1;
-      if any(contains(effluxRxns, rxn))
+      if any(strcmp(rxn, effluxRxns))
         parentActiveExCount = parentActiveExCount + 1;
         parentActiveExRxns{end+1} = rxn;
-      elseif any(contains(trRxns, rxn))
+      elseif any(strcmp(rxn, trRxns))
         parentActiveTrCount = parentActiveTrCount + 1;
         parentActiveTrRxns{end+1} = rxn;
       end
