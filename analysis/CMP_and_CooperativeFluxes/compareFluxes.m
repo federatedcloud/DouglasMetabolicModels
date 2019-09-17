@@ -14,7 +14,7 @@ function pairAnalysis = compareFluxes(childRes, parentRes, setDEBUG)
   childLostRxns = {};
   pairAnalysis = struct;
 
-  effluxRxns = findEffluxRxns(parentRes.model);
+  excRxns = parentRes.model.rxns(findExcIDs(parentRes.model));
   trRxns = findTrRxns(parentRes.model);
 
   DEBUG = false;
@@ -27,16 +27,26 @@ function pairAnalysis = compareFluxes(childRes, parentRes, setDEBUG)
   commonRxns = intersect(childRes.model.rxns, parentRes.model.rxns);
   childActiveCount = 0;
   parentActiveCount = 0;
-  childActiveExCount = 0;
-  parentActiveExCount = 0;
-  childActiveTrCount = 0;
-  parentActiveTrCount = 0;
   childActiveRxns = {};
   parentActiveRxns = {};
-  childActiveExRxns = {};
-  parentActiveExRxns = {};
-  childActiveTrRxns = {};
-  parentActiveTrRxns = {};
+
+  childActiveInExCount = 0;
+  parentActiveInExCount = 0;
+  childActiveInTrCount = 0;
+  parentActiveInTrCount = 0;
+  childActiveInExRxns = {};
+  parentActiveInExRxns = {};
+  childActiveInTrRxns = {};
+  parentActiveInTrRxns = {};
+
+  childActiveOutExCount = 0;
+  parentActiveOutExCount = 0;
+  childActiveOutTrCount = 0;
+  parentActiveOutTrCount = 0;
+  childActiveOutExRxns = {};
+  parentActiveOutExRxns = {};
+  childActiveOutTrRxns = {};
+  parentActiveOutTrRxns = {};
 
   if DEBUG
     trRxnFID = fopen('trRxnFluxes.csv', 'w');
@@ -55,12 +65,22 @@ function pairAnalysis = compareFluxes(childRes, parentRes, setDEBUG)
       childActiveCount = childActiveCount + 1;
       childActiveRxns{end+1} = rxn;
       childIsAct = 1;
-      if any(strcmp(rxn, effluxRxns))
-        childActiveExCount = childActiveExCount + 1;
-        childActiveExRxns{end+1} = rxn;
+      if any(strcmp(rxn, excRxns))
+        if sign(childRFmap(rxn)) > 0
+          childActiveOutExCount = childActiveOutExCount + 1;
+          childActiveOutExRxns{end+1} = rxn;
+        elseif sign(childRFmap(rxn)) < 0
+          childActiveInExCount = childActiveInExCount + 1;
+          childActiveInExRxns{end+1} = rxn;
+        end
       elseif any(strcmp(rxn, trRxns))
-        childActiveTrCount = childActiveTrCount + 1;
-        childActiveTrRxns{end+1} = rxn;
+        if sign(childRFmap(rxn)) > 0
+          childActiveOutTrCount = childActiveOutTrCount + 1;
+          childActiveOutTrRxns{end+1} = rxn;
+        elseif sign(childRFmap(rxn)) < 0
+          childActiveInTrCount = childActiveInTrCount + 1;
+          childActiveInTrRxns{end+1} = rxn;
+        end
         if DEBUG
           fprintf(trRxnFID, '%s\t%d\n', rxn, childRFmap(rxn));
         end
@@ -70,12 +90,22 @@ function pairAnalysis = compareFluxes(childRes, parentRes, setDEBUG)
       parentActiveCount = parentActiveCount + 1;
       parentActiveRxns{end+1} = rxn;
       parIsAct = 1;
-      if any(strcmp(rxn, effluxRxns))
-        parentActiveExCount = parentActiveExCount + 1;
-        parentActiveExRxns{end+1} = rxn;
+      if any(strcmp(rxn, excRxns))
+        if sign(parRFmap(rxn)) > 0
+          parentActiveOutExCount = parentActiveOutExCount + 1;
+          parentActiveOutExRxns{end+1} = rxn;
+        elseif sign(parRFmap(rxn)) < 0
+          parentActiveInExCount = parentActiveInExCount + 1;
+          parentActiveInExRxns{end+1} = rxn;
+        end
       elseif any(strcmp(rxn, trRxns))
-        parentActiveTrCount = parentActiveTrCount + 1;
-        parentActiveTrRxns{end+1} = rxn;
+        if sign(parRFmap(rxn)) > 0
+          parentActiveOutTrCount = parentActiveOutTrCount + 1;
+          parentActiveOutTrRxns{end+1} = rxn;
+        elseif sign(parRFmap(rxn)) < 0
+          parentActiveInTrCount = parentActiveInTrCount + 1;
+          parentActiveInTrRxns{end+1} = rxn;
+        end
       end
     end
     if (parIsAct > childIsAct)
@@ -100,23 +130,39 @@ function pairAnalysis = compareFluxes(childRes, parentRes, setDEBUG)
   pairAnalysis.table = tbl;
   pairAnalysis.cmp.child = childActiveCount;
   pairAnalysis.cmp.parent = parentActiveCount;
-  pairAnalysis.cmpEx.child = childActiveExCount;
-  pairAnalysis.cmpEx.parent = parentActiveExCount;
-  pairAnalysis.cmpTr.child = childActiveTrCount;
-  pairAnalysis.cmpTr.parent = parentActiveTrCount;
+
+  pairAnalysis.cmpInEx.child = childActiveInExCount;
+  pairAnalysis.cmpInEx.parent = parentActiveInExCount;
+  pairAnalysis.cmpInTr.child = childActiveInTrCount;
+  pairAnalysis.cmpInTr.parent = parentActiveInTrCount;
+
+  pairAnalysis.cmpOutEx.child = childActiveOutExCount;
+  pairAnalysis.cmpOutEx.parent = parentActiveOutExCount;
+  pairAnalysis.cmpOutTr.child = childActiveOutTrCount;
+  pairAnalysis.cmpOutTr.parent = parentActiveOutTrCount;
 
   pairAnalysis.cmpUniq.child = ...
     numel(flattenRxnsAcrossSpecies(childActiveRxns, childRes.model));
   pairAnalysis.cmpUniq.parent = ...
     numel(flattenRxnsAcrossSpecies(parentActiveRxns, parentRes.model));
-  pairAnalysis.cmpExUniq.child = ...
-    numel(flattenRxnsAcrossSpecies(childActiveExRxns, childRes.model));
-  pairAnalysis.cmpExUniq.parent = ...
-    numel(flattenRxnsAcrossSpecies(parentActiveExRxns, parentRes.model));
-  pairAnalysis.cmpTrUniq.child = ...
-    numel(flattenRxnsAcrossSpecies(childActiveTrRxns, childRes.model));
-  pairAnalysis.cmpTrUniq.parent = ...
-    numel(flattenRxnsAcrossSpecies(parentActiveTrRxns, parentRes.model));
+
+  pairAnalysis.cmpInExUniq.child = ...
+    numel(flattenRxnsAcrossSpecies(childActiveInExRxns, childRes.model));
+  pairAnalysis.cmpInExUniq.parent = ...
+    numel(flattenRxnsAcrossSpecies(parentActiveInExRxns, parentRes.model));
+  pairAnalysis.cmpInTrUniq.child = ...
+    numel(flattenRxnsAcrossSpecies(childActiveInTrRxns, childRes.model));
+  pairAnalysis.cmpInTrUniq.parent = ...
+    numel(flattenRxnsAcrossSpecies(parentActiveInTrRxns, parentRes.model));
+
+  pairAnalysis.cmpOutExUniq.child = ...
+    numel(flattenRxnsAcrossSpecies(childActiveOutExRxns, childRes.model));
+  pairAnalysis.cmpOutExUniq.parent = ...
+    numel(flattenRxnsAcrossSpecies(parentActiveOutExRxns, parentRes.model));
+  pairAnalysis.cmpOutTrUniq.child = ...
+    numel(flattenRxnsAcrossSpecies(childActiveOutTrRxns, childRes.model));
+  pairAnalysis.cmpOutTrUniq.parent = ...
+    numel(flattenRxnsAcrossSpecies(parentActiveOutTrRxns, parentRes.model));
 
   pairAnalysis.parentGainedRxns = parentGainedRxns;
   pairAnalysis.childLostRxns = childLostRxns;
