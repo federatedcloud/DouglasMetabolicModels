@@ -3,7 +3,6 @@ function groupMap = readRxnGroups(rxnGroupFile)
   tblKeyCol = 'metabolicGroup_pathway';
   tblValCol = 'listOfReactionIds';
   groupMap = containers.Map();
-
   for ii = 1:height(tbl)
     gKey = tbl{ii, tblKeyCol}{1};
     gVal = splitString(tbl{ii, tblValCol}{1}, ';');

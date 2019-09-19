@@ -45,7 +45,10 @@ function tables = genHeatMapTables(analysis)
     end
 
     function excRxnIds = excMultiSub(rxnIds, multiModel)
-      rxnIdsMMT = cellFlatMap(@(r) regexprep(r, '_e$', '[u]'), rxnIds);
+      rxnIdsMMT = union( ...
+        cellFlatMap(@(r) regexprep(r, '_e$', '[u]'), rxnIds), ...
+        multiModel.rxns(findBiomassRxnIds(multiModel)) ...
+      );
       rxnIxsMMT = cell2mat(cellFlatMap(@(r) find(strcmp(r, multiModel.rxns)), rxnIdsMMT));
       rxnIxsMM = filter1d(@(r) r > 0, rxnIxsMMT);
       excRxnIds = cellFlatMap(@(r) cellHead(multiModel.rxns(r)), num2cell(rxnIxsMM));
