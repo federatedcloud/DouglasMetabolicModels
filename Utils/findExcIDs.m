@@ -1,5 +1,5 @@
-function excIDs=findExcIDs(model)
-% Finds the exchange reaction IDs for a model.
+function excIDs = findExcIDs(model)
+% FINDS the exchange reaction IDs for a model.
 % (Not using the given function in cobraToolbox because it includes
 % equations not considered as exchange)
 % In a multiple species model, finds the exchange reactions in the lumen
@@ -8,5 +8,6 @@ function excIDs=findExcIDs(model)
 %
 % Author: Cindy Wu
 %
-excRxns=startsWith(model.rxns,'EX_');
-excIDs=transpose(find(excRxns));
+  excRxns=startsWith(model.rxns,'EX_');
+  excIDs=transpose(find(excRxns));
+end
