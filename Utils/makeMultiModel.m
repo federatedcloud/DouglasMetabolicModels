@@ -65,6 +65,8 @@ function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
     multiModel = createMinimalPlusModel(multiModel);
   elseif strcmp(mediaType, 'minimal')
     multiModel = createMinModel(multiModel);
+  elseif strcmp(mediaType, 'rich')
+    multiModel = capBounds(multiModel, 100);
   end
 
   % subsumed by builtin constraints in 04/11/19 models
