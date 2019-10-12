@@ -6,8 +6,8 @@
 % Only transport reactions and efflux-exchange reactions are considered.
 %
 function tables = genHeatMapTables(analysis)
-  trRxnGroups = readRxnGroups('../../models/u_trans_rxns_080719.csv');
-  exRxnGroups = readRxnGroups('../../models/exchange_rxns_080719.csv');
+  trRxnGroups = readTrRxnGroups();
+  exRxnGroups = readExRxnGroups();
   combinedKeys = union(keys(trRxnGroups), keys(exRxnGroups));
   combinedRxnGroup = containers.Map();
   modelMap = containers.Map();
@@ -16,9 +16,16 @@ function tables = genHeatMapTables(analysis)
     combinedRxnGroup(gKey) = ...
       union(getOrEmpty(@() trRxnGroups(gKey)),  getOrEmpty(@() exRxnGroups(gKey)));
   end
+  trRxnGroupsNoInorgIons = containers.Map(trRxnGroups.keys, trRxnGroups.values);
+  exRxnGroupsNoInorgIons = containers.Map(exRxnGroups.keys, exRxnGroups.values);
+  trRxnGroupsNoInorgIons.remove(inorganicIonGroupName());
+  exRxnGroupsNoInorgIons.remove(inorganicIonGroupName());
 
-  tables.trans = genHMTable(trRxnGroups, true);
-  tables.exchange = genHMTable(exRxnGroups, false);
+  tables = containers.Map();
+  tables('trans') = genHMTable(trRxnGroups, true);
+  tables('exchange') = genHMTable(exRxnGroups, false);
+  tables('trans_noInorgIons') = genHMTable(trRxnGroupsNoInorgIons, true);
+  tables('exchange_noInorgIons') = genHMTable(exRxnGroupsNoInorgIons, false);
 
   function cellTbl = genHMTable(rxnGroups, isTrans)
 
@@ -37,11 +44,6 @@ function tables = genHeatMapTables(analysis)
         groupHeaders(rowPos) = {groupName};
         rxnHeaders(rowPos) = {rxnId};
       end
-    end
-
-    function trRxnsFnd = trCatRxns(rxns, org, multiModel)
-      tentativeRxns = cellFlatMap(@(r) strjoin({org, r}, ''), rxns);
-      trRxnsFnd = filter1d(@(r) r > 0, findRxnIDs(multiModel, tentativeRxns));
     end
 
     function excRxnIds = excMultiSub(rxnIds, multiModel)
@@ -149,7 +151,7 @@ function tables = genHeatMapTables(analysis)
           group = groups{jj};
           gRxns = rxnGroups(group);
           if isTrans
-            gSpRxns = trCatRxns(gRxns, org, afVal.model);
+            gSpRxns = catSpeciesRxnPrefixes(gRxns, afVal.model, org);
             rxnIxs = [rxnIxs(:)' gSpRxns(:)'];
           else
             gRxnsMM = excMultiSub(gRxns, afVal.model);

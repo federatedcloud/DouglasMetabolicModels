@@ -190,59 +190,73 @@ function analysis = runAnalysis(modelMap, mediaType)
   end
   fclose(fid);
 
-  % Overlapping inputs analysis (individuals)
-  oInpMap = containers.Map();
-  for ii = 1:numel(comparisons)
-    comp = comparisons{ii};
-    % parent case
-    olapKeys = comp.overlappingInputs.parent.keys;
-    for jj = 1:numel(olapKeys)
-      orgKey = olapKeys{jj};
-      olapInputs = comp.overlappingInputs.parent(orgKey);
-      oInpData = struct;
-      oInpData.label = comp.parName;
-      oInpData.size = comp.size.parent;
-      oInpData.org = olapInputs.org;
-      oInpData.overlap = olapInputs.count;
-      oInpData.degrees = olapInputs.list;
-      oInKey = strjoin({oInpData.label,oInpData.org }, ';');
-      oInpMap(oInKey) = oInpData;
+  % Overlapping transport analysis (individuals)
+  function genOverlapFiles(compOverlapping, oLabel)
+    oTrMap = containers.Map();
+    for ii = 1:numel(comparisons)
+      comp = comparisons{ii};
+      % parent case
+      olapKeys = compOverlapping.parent.keys;
+      for jj = 1:numel(olapKeys)
+        orgKey = olapKeys{jj};
+        olapIO = compOverlapping.parent(orgKey);
+        oTrData = struct;
+        oTrData.label = comp.parName;
+        oTrData.size = comp.size.parent;
+        oTrData.org = olapIO.org;
+        oTrData.overlapIn = olapIO.countIn;
+        oTrData.degreesIn = olapIO.listIn;
+        oTrData.overlapOut = olapIO.countOut;
+        oTrData.degreesOut = olapIO.listOut;
+        oTrKey = strjoin({oTrData.label,oTrData.org }, ';');
+        oTrMap(oTrKey) = oTrData;
+      end
+      % child case
+      olapKeys = compOverlapping.child.keys;
+      for jj = 1:numel(olapKeys)
+        orgKey = olapKeys{jj};
+        olapIO = compOverlapping.child(orgKey);
+        oTrData = struct;
+        oTrData.label = comp.childName;
+        oTrData.size = comp.size.child;
+        oTrData.org = olapIO.org;
+        oTrData.overlapIn = olapIO.countIn;
+        oTrData.degreesIn = olapIO.listIn;
+        oTrData.overlapOut = olapIO.countOut;
+        oTrData.degreesOut = olapIO.listOut;
+        oTrKey = strjoin({oTrData.label,oTrData.org }, ';');
+        oTrMap(oTrKey) = oTrData;
     end
-    % child case
-    olapKeys = comp.overlappingInputs.child.keys;
-    for jj = 1:numel(olapKeys)
-      orgKey = olapKeys{jj};
-      olapInputs = comp.overlappingInputs.child(orgKey);
-      oInpData = struct;
-      oInpData.label = comp.childName;
-      oInpData.size = comp.size.child;
-      oInpData.org = olapInputs.org;
-      oInpData.overlap = olapInputs.count;
-      oInpData.degrees = olapInputs.list;
-      oInKey = strjoin({oInpData.label,oInpData.org }, ';');
-      oInpMap(oInKey) = oInpData;
+    olfName = strjoin({outDirectory, filesep, 'influxOverlap', oLabel, '.csv'}, '');
+    olHeader = strjoin({'Community', '#species', 'Org', 'overlapIn', 'degreeIn', ...
+                        'overlapOut', 'degreeOut'}, ',');
+    fid = fopen(olfName, 'wt+');
+    fprintf(fid, '%s\n', olHeader);
+    commLabels = keys(oTrMap);
+    for ii = 1:numel(commLabels)
+      label = commLabels{ii};
+      rec = oTrMap(label);
+      degInStr = strjoin(                                      ...
+        cellFlatMap(@(x) num2str(x), num2cell(rec.degreesIn)), ...
+        ';');
+      degOutStr = strjoin(                                      ...
+        cellFlatMap(@(x) num2str(x), num2cell(rec.degreesOut)), ...
+        ';');
+      fprintf(fid, '%s,%d,%s,%d,%s,%d,%s\n',                         ...
+              rec.label, rec.size, rec.org, rec.overlapIn, degInStr  ...
+              rec.overlapOut, degOutStr);
+    end
+    fclose(fid);
   end
-  olfName = strjoin({outDirectory, filesep, 'influxOverlap', '.csv'}, '');
-  olHeader = strjoin({'Community', '#species', 'Org', 'overlap', 'degree'}, ',');
-  fid = fopen(olfName, 'wt+');
-  fprintf(fid, '%s\n', olHeader);
-  commLabels = keys(oInpMap);
-  for ii = 1:numel(commLabels)
-    label = commLabels{ii};
-    rec = oInpMap(label);
-    degStr = strjoin(                                      ...
-      cellFlatMap(@(x) num2str(x), num2cell(rec.degrees)), ...
-      ';');
-    fprintf(fid, '%s,%d,%s,%d,%s\n', ...
-      rec.label, rec.size, rec.org, rec.overlap, degStr);
-  end
-  fclose(fid);
+  genOverlapFiles(comp.overlappingTr, '');
+  genOverlapFiles(comp.overlappingTrNoInorg, '_NoInorganicIons');
 
   % Write heatmaps
   heatMapTbls = genHeatMapTables(analysis);
-  exHeatFName = strjoin({outDirectory, filesep, 'heatmap_exchange.csv'}, '');
-  writetable(cell2table(heatMapTbls.exchange), exHeatFName, 'WriteVariableNames', false);
-  transHeatFName = strjoin({outDirectory, filesep, 'heatmap_trans.csv'}, '');
-  writetable(cell2table(heatMapTbls.trans), transHeatFName, 'WriteVariableNames', false);
-
+  heatMapTblKeys = keys(heatMapTbls)
+  for ii = 1:numel(heatMapTblKeys)
+    tblKey = heatMapTblKeys(ii);
+    heatFName = strjoin({outDirectory, filesep, 'heatmap_', tblKey, '.csv'}, '');
+    writetable(cell2table(heatMapTbls(tblKey)), heatFName, 'WriteVariableNames', false);
+  end
 end

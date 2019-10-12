@@ -22,12 +22,15 @@ function funOut = competitionIndex(rxn, model, flux)
     speciesTrFxs = flux(speciesTrIxs);
     activeIxs = find(abs(speciesTrFxs) > fluxThreshold);
     inIxs = find(speciesTrFxs < -fluxThreshold);
+    outIxs = find(speciesTrFxs > fluxThreshold);
     if numel(activeIxs) > 0
       activeFxs = speciesTrFxs(activeIxs);
       activeRxns = speciesTrRxns(activeIxs);
       activeOrgs = cellFlatMap(@(r) r(1:2), activeRxns);
       inRxns = speciesTrRxns(inIxs);
+      outRxns = speciesTrRxns(outIxs);
       inOrgs = cellFlatMap(@(r) r(1:2), inRxns);
+      outOrgs = cellFlatMap(@(r) r(1:2), outRxns);
       activeRxnList = cellFlatMap(                              ...
         @(c) strjoin(c, ':'),                                   ...
         cellzip(activeOrgs, strip(cellstr(num2str(activeFxs)))) ...
@@ -38,7 +41,7 @@ function funOut = competitionIndex(rxn, model, flux)
       outFluxIx = num2str(sum(activeFxs > 0));
       rxnInfo = strjoin(activeRxnList, '; ');
       lineOut = strjoin({rxnMetname, netCIx, inFluxIx, outFluxIx, rxnInfo}, ', ');
-      statsOut = {netCIx, inFluxIx, outFluxIx, inOrgs};
+      statsOut = {netCIx, inFluxIx, outFluxIx, inOrgs, outOrgs};
       funOut = {lineOut, statsOut};
     end
   end
