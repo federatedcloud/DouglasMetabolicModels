@@ -4,9 +4,9 @@
 function funOut = competitionIndex(rxn, model, flux)
   rxns = model.rxns;
   funOut = {'', {}};
+  rxnIx = find(strcmp(rxn, rxns));
 
   function metName = lookupMetName()
-    rxnIx = find(strcmp(rxn, rxns));
     metNames = model.metNames(find(model.S(:,rxnIx)));
     metName = metNames{1};
   end
@@ -37,11 +37,21 @@ function funOut = competitionIndex(rxn, model, flux)
       );
       rxnMetname = lookupMetName();
       netCIx = num2str(sum(sign(-1*activeFxs)));
-      inFluxIx = num2str(sum(activeFxs < 0));
-      outFluxIx = num2str(sum(activeFxs > 0));
+      isInFluxVec = activeFxs < 0;
+      inFluxIx = num2str(sum(isInFluxVec));
+      isOutFluxVec = activeFxs > 0;
+      outFluxIx = num2str(sum(isOutFluxVec));
       rxnInfo = strjoin(activeRxnList, '; ');
       lineOut = strjoin({rxnMetname, netCIx, inFluxIx, outFluxIx, rxnInfo}, ', ');
-      statsOut = {netCIx, inFluxIx, outFluxIx, inOrgs, outOrgs};
+      inFluxSum = 0;
+      outFluxSum = 0;
+      if flux(rxnIx) < 0
+        inFluxSum = flux(rxnIx);
+      end
+      if flux(rxnIx) > 0
+        outFluxSum = flux(rxnIx);
+      end
+      statsOut = {netCIx, inFluxIx, outFluxIx, inOrgs, outOrgs, inFluxSum, outFluxSum};
       funOut = {lineOut, statsOut};
     end
   end
