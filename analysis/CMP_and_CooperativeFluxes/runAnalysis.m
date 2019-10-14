@@ -196,7 +196,7 @@ function analysis = runAnalysis(modelMap, mediaType)
     for i5 = 1:numel(comparisons)
       comp = comparisons{i5};
       compOverlapping = comp.overlappingTr;
-      if (isempty(oLabel) > 0)
+      if ~isempty(oLabel)
         compOverlapping = comp.overlappingTrNoInorg;
       end
       % parent case
