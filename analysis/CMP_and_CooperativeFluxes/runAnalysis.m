@@ -111,8 +111,8 @@ function analysis = runAnalysis(modelMap, mediaType)
 
   % Individual community analysis
   cmpMap = containers.Map();
-  for ii = 1:numel(comparisons)
-    comp = comparisons{ii};
+  for i3 = 1:numel(comparisons)
+    comp = comparisons{i3};
     % parent case
     cmpData = struct;
     cmpData.label = comp.parName;
@@ -182,8 +182,8 @@ function analysis = runAnalysis(modelMap, mediaType)
   cmpFmtSpec = strcat(strjoin(cmpFields(:, 2), ','), '\n');
   cmpFieldVals = @(rec) cellFlatMap(@(ap) ap(rec), cmpFields(:,3));
   commLabels = keys(cmpMap);
-  for ii = 1:numel(commLabels)
-    label = commLabels{ii};
+  for i4 = 1:numel(commLabels)
+    label = commLabels{i4};
     rec = cmpMap(label);
     cfVals = cmpFieldVals(rec);
     fprintf(fid, cmpFmtSpec, cfVals{:});
@@ -193,8 +193,8 @@ function analysis = runAnalysis(modelMap, mediaType)
   % Overlapping transport analysis (individuals)
   function genOverlapFiles(compOverlapping, oLabel)
     oTrMap = containers.Map();
-    for ii = 1:numel(comparisons)
-      comp = comparisons{ii};
+    for i5 = 1:numel(comparisons)
+      comp = comparisons{i5};
       % parent case
       olapKeys = compOverlapping.parent.keys;
       for jj = 1:numel(olapKeys)
@@ -226,6 +226,7 @@ function analysis = runAnalysis(modelMap, mediaType)
         oTrData.degreesOut = olapIO.listOut;
         oTrKey = strjoin({oTrData.label,oTrData.org }, ';');
         oTrMap(oTrKey) = oTrData;
+      end
     end
     olfName = strjoin({outDirectory, filesep, 'overlap', oLabel, '.csv'}, '');
     olHeader = strjoin({'Community', '#species', 'Org', 'overlapIn', 'degreeIn', ...
@@ -233,8 +234,8 @@ function analysis = runAnalysis(modelMap, mediaType)
     fid = fopen(olfName, 'wt+');
     fprintf(fid, '%s\n', olHeader);
     commLabels = keys(oTrMap);
-    for ii = 1:numel(commLabels)
-      label = commLabels{ii};
+    for i5 = 1:numel(commLabels)
+      label = commLabels{i5};
       rec = oTrMap(label);
       degInStr = strjoin(                                      ...
         cellFlatMap(@(x) num2str(x), num2cell(rec.degreesIn)), ...
@@ -242,8 +243,8 @@ function analysis = runAnalysis(modelMap, mediaType)
       degOutStr = strjoin(                                      ...
         cellFlatMap(@(x) num2str(x), num2cell(rec.degreesOut)), ...
         ';');
-      fprintf(fid, '%s,%d,%s,%d,%s,%d,%s\n',                         ...
-              rec.label, rec.size, rec.org, rec.overlapIn, degInStr  ...
+      fprintf(fid, '%s,%d,%s,%d,%s,%d,%s\n',                          ...
+              rec.label, rec.size, rec.org, rec.overlapIn, degInStr,  ...
               rec.overlapOut, degOutStr);
     end
     fclose(fid);
@@ -253,9 +254,9 @@ function analysis = runAnalysis(modelMap, mediaType)
 
   % Write heatmaps
   heatMapTbls = genHeatMapTables(analysis);
-  heatMapTblKeys = keys(heatMapTbls)
-  for ii = 1:numel(heatMapTblKeys)
-    tblKey = heatMapTblKeys(ii);
+  heatMapTblKeys = keys(heatMapTbls);
+  for i3 = 1:numel(heatMapTblKeys)
+    tblKey = heatMapTblKeys(i3);
     heatFName = strjoin({outDirectory, filesep, 'heatmap_', tblKey, '.csv'}, '');
     writetable(cell2table(heatMapTbls(tblKey)), heatFName, 'WriteVariableNames', false);
   end
