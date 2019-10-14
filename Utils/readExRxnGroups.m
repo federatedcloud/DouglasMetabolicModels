@@ -1,3 +1,6 @@
 function groupMap = readExRxnGroups()
-  groupMap = readRxnGroup('../models/exchange_rxns_080719.csv');
+  global DMMDIR;
+  groupMap = readRxnGroups(strcat(                                ...
+    DMMDIR, filesep, 'models', filesep, 'exchange_rxns_080719.csv' ...
+  ));
 end

@@ -227,7 +227,7 @@ function analysis = runAnalysis(modelMap, mediaType)
         oTrKey = strjoin({oTrData.label,oTrData.org }, ';');
         oTrMap(oTrKey) = oTrData;
     end
-    olfName = strjoin({outDirectory, filesep, 'influxOverlap', oLabel, '.csv'}, '');
+    olfName = strjoin({outDirectory, filesep, 'overlap', oLabel, '.csv'}, '');
     olHeader = strjoin({'Community', '#species', 'Org', 'overlapIn', 'degreeIn', ...
                         'overlapOut', 'degreeOut'}, ',');
     fid = fopen(olfName, 'wt+');

@@ -15,11 +15,11 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
   overlappingTr = cmpIndInner(exRxns);
   overlappingTrNoInorg = cmpIndInner(exRxnsNoInorg);
 
-  function cmpIndInner(exRxnSet)
+  function overlappingTr = cmpIndInner(exRxnSet)
     compIdxOut = cellFlatMap(@(r) competitionIndex(r, model, flux), exRxnSet);
     dataLines = cellFlatMap(@(x) x{1}, compIdxOut);
-    dataStats = cellFlatMap(@(x) x{2}, compIdxOut);
     dataLines = filter1d(@(l) numel(l) > 0, dataLines);
+    dataStats = cellFlatMap(@(x) x{2}, compIdxOut);
     dataStats = filter1d(@(s) numel(s) > 0, dataStats);
     % dataOut = strjoin(dataLines, '\n');
     % header = 'Met, CompIdx, InfluxIdx, OutfluxIdx, FluxInfo';
@@ -42,7 +42,7 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
         % inFluxIx has position 2, but check this in competitionIndex.m
         % same for inOrgs being position 4
         ss = dataStats{sIx};
-        inFluxIx = str2num(ss{2});
+        inFluxIx = str2double(ss{2});
         inOrgs = ss{4};
         assert(inFluxIx == numel(inOrgs));
         for oIx = 1:inFluxIx
@@ -54,7 +54,7 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
             overlapping(org) = orgStats;
           end % if inFluxIx
         end % of for oIx
-        outFluxIx = str2num(ss{3});
+        outFluxIx = str2double(ss{3});
         outOrgs = ss{5};
         assert(outFluxIx == numel(outOrgs));
         for oIx = 1:outFluxIx
