@@ -26,9 +26,9 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
     % dataOut = strjoin({header, dataOut}, '\n');
 
     % iKeys = cellFlatMap(@(x) num2str(x), num2cell(1:nSpecies));
-    [repOLapStruct{1:nSpecies}] = deal(struct( ...
-      'countIn', 0, 'listIn', [], 'countOut', 0, 'listOut', [],  ...
-      'inFluxSum', 0, 'outFluxSum', 0                           ...
+    [repOLapStruct{1:nSpecies}] = deal(struct(                             ...
+      'countIn', 0, 'listIn', [], 'countOut', 0, 'listOut', [],            ...
+      'inFluxSum', 0, 'outFluxSum', 0, 'inFluxCount', 0, 'outFluxCount', 0 ...
     ));
     for ii = 1:nSpecies
       rs = repOLapStruct{ii};
@@ -47,12 +47,15 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
         inOrgs = ss{4};
         assert(inFluxIx == numel(inOrgs));
         for oIx = 1:inFluxIx
+          org = inOrgs{oIx};
+          orgStats = overlapping(org);
+          if ss{6} < 0
+            orgStats.inFluxCount = orgStats.inFluxCount + 1;
+          end
+          orgStats.inFluxSum = orgStats.inFluxSum + ss{6};
           if inFluxIx > 1
-            org = inOrgs{oIx};
-            orgStats = overlapping(org);
             orgStats.countIn = orgStats.countIn + 1;
             orgStats.listIn = [orgStats.listIn (inFluxIx-1)];
-            orgStats.inFluxSum = orgStats.inFluxSum + ss{6};
             overlapping(org) = orgStats;
           end % if inFluxIx
         end % of for oIx
@@ -60,12 +63,15 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
         outOrgs = ss{5};
         assert(outFluxIx == numel(outOrgs));
         for oIx = 1:outFluxIx
+          org = outOrgs{oIx};
+          orgStats = overlapping(org);
+          if ss{7} > 0
+            orgStats.outFluxCount = orgStats.outFluxCount + 1;
+          end
+          orgStats.outFluxSum = orgStats.outFluxSum + ss{7};
           if outFluxIx > 1
-            org = outOrgs{oIx};
-            orgStats = overlapping(org);
             orgStats.countOut = orgStats.countOut + 1;
             orgStats.listOut = [orgStats.listOut (outFluxIx-1)];
-            orgStats.outFluxSum = orgStats.outFluxSum + ss{7};
             overlapping(org) = orgStats;
           end % if outFluxIx
         end % of for oIx
