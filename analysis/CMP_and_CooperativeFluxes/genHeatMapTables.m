@@ -53,8 +53,8 @@ function tables = genHeatMapTables(analysis)
     rxnHeaders(end-nOrgsTotal:end-1) = ...
       cellFlatMap(@(s) strjoin({'Biomass_', s}, ''), allSpecies);
     groupHeaders(end-nOrgsTotal:end-1) = deal({'Biomass'});
-    rxnHeaders(end) = {'μ'};
-    groupHeaders(end) = {'μ'};
+    rxnHeaders(end) = {'CommunityGrowth'};
+    groupHeaders(end) = {'CommunityGrowth'};
     function excRxnIds = excMultiSub(rxnIds, multiModel)
       rxnIdsMMT = union( ...
         cellFlatMap(@(r) regexprep(r, '_e$', '[u]'), rxnIds), ...
@@ -205,7 +205,7 @@ function tables = genHeatMapTables(analysis)
           cellTbl(2 + rows, fluxPos) = num2cell(fluxes(kk));
         end
         cellTbl(end-nOrgsTotal:end-1, fluxPos) = ...
-          num2cell(makeFullBMvec(resultMap(comm).BM, modelMap(comm)));
+          makeFullBMvec(resultMap(comm).BM, modelMap(comm));
         cellTbl(end, fluxPos) = num2cell(resultMap(comm).GRmax);
       end
     end % of for ii = 1:nComs
@@ -216,13 +216,13 @@ function tables = genHeatMapTables(analysis)
     assert(all(size(cellTbl) == [nRows nCols]));
   end % of genHMTable
 
-  function fullVec = makeFullBMvec(inVec, model)
-    fullVec = nan(nOrgsTotal, 1);
+  function fullCell = makeFullBMvec(inVec, model)
+    fullCell = cell(nOrgsTotal, 1);
     nSpecies = numel(model.infoCom.spAbbr);
     for ii = 1:nSpecies
       org = model.infoCom.spAbbr{ii};
       orgIx = find(strcmp(allSpecies, org));
-      fullVec(orgIx) = inVec(ii);
+      fullCell(orgIx) = num2cell(inVec(ii));
     end
   end
 

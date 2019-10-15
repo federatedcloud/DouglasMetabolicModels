@@ -10,8 +10,7 @@ function [sol, result, LP, LPminNorm] = runSteadyCom(multiModel, optsIn)
   origFeasTol = getCobraSolverParams('LP', 'feasTol');
   changeCobraSolverParams('LP', 'feasTol', 1e-8);
   [sol result LP LPminNorm] = SteadyCom(multiModel, options);
-  if (result.GRmax == 0)
-    result.flux = 0 * result.flux;
-  end
+  result = fixSCRes(result);
+
   changeCobraSolverParams('LP', 'feasTol', origFeasTol);
 end
