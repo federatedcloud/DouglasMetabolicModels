@@ -262,10 +262,5 @@ function analysis = runAnalysis(modelMap, mediaType)
 
   % Write heatmaps
   heatMapTbls = genHeatMapTables(analysis);
-  heatMapTblKeys = keys(heatMapTbls);
-  for i3 = 1:numel(heatMapTblKeys)
-    tblKey = heatMapTblKeys{i3};
-    heatFName = strjoin({outDirectory, filesep, 'heatmap_', tblKey, '.csv'}, '');
-    writetable(cell2table(heatMapTbls(tblKey)), heatFName, 'WriteVariableNames', false);
-  end
+  writeHeatMapTables(heatMapTbls, outDirectory);
 end
