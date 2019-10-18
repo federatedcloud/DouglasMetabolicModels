@@ -16,6 +16,7 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
   overlappingTrNoInorg = cmpIndInner(exRxnsNoInorg);
 
   function overlappingTr = cmpIndInner(exRxnSet)
+    exRxnSetIxs = find(contains(model.rxns, exRxnSet));
     compIdxOut = cellFlatMap(@(r) competitionIndex(r, model, flux), exRxnSet);
     dataLines = cellFlatMap(@(x) x{1}, compIdxOut);
     dataLines = filter1d(@(l) numel(l) > 0, dataLines);
@@ -49,9 +50,6 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
         for oIx = 1:inFluxIx
           org = inOrgs{oIx};
           orgStats = overlapping(org);
-          if ss{6} < 0
-            orgStats.inFluxCount = orgStats.inFluxCount + 1;
-          end
           orgStats.inFluxSum = orgStats.inFluxSum + ss{6};
           if inFluxIx > 1
             orgStats.countIn = orgStats.countIn + 1;
@@ -65,9 +63,6 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
         for oIx = 1:outFluxIx
           org = outOrgs{oIx};
           orgStats = overlapping(org);
-          if ss{7} > 0
-            orgStats.outFluxCount = orgStats.outFluxCount + 1;
-          end
           orgStats.outFluxSum = orgStats.outFluxSum + ss{7};
           if outFluxIx > 1
             orgStats.countOut = orgStats.countOut + 1;
@@ -76,6 +71,13 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
           end % if outFluxIx
         end % of for oIx
       end % of for sIx
+      for ii = 1:nSpecies
+        org = model.infoCom.spAbbr{ii};
+        orgStats = overlapping(org);
+        orgStats.inFluxCount = sum(flux(exRxnSetIxs) < 0);
+        orgStats.outFluxCount = sum(flux(exRxnSetIxs) > 0);
+        overlapping(org) = orgStats;
+      end  % end of for ii = 1:nSpecies
     end % of function addOrgStats
   end
 
