@@ -228,6 +228,8 @@ function analysis = runAnalysis(modelMap, mediaType)
         oTrData.outFluxSum = olapIO.outFluxSum;
         oTrData.inFluxCount = olapIO.inFluxCount;
         oTrData.outFluxCount = olapIO.outFluxCount;
+        oTrData.inFluxRxns = olapIO.inFluxRxns;
+        oTrData.outFluxRxns = olapIO.outFluxRxns;
         oTrKey = strjoin({oTrData.label,oTrData.org }, ';');
         oTrMap(oTrKey) = oTrData;
       end
@@ -248,6 +250,8 @@ function analysis = runAnalysis(modelMap, mediaType)
         oTrData.outFluxSum = olapIO.outFluxSum;
         oTrData.inFluxCount = olapIO.inFluxCount;
         oTrData.outFluxCount = olapIO.outFluxCount;
+        oTrData.inFluxRxns = olapIO.inFluxRxns;
+        oTrData.outFluxRxns = olapIO.outFluxRxns;
         oTrKey = strjoin({oTrData.label,oTrData.org }, ';');
         oTrMap(oTrKey) = oTrData;
       end
@@ -255,7 +259,7 @@ function analysis = runAnalysis(modelMap, mediaType)
     olfName = strjoin({outDirectory, filesep, 'overlap', oLabel, '.csv'}, '');
     olHeader = strjoin({'Community', '#species', 'Org', 'overlapIn', 'degreeIn', ...
                         'overlapOut', 'degreeOut', 'inFluxSum', 'outFluxSum',   ...
-                        'inFluxCount', 'outFluxCount'} , ',');
+                        'inFluxCount', 'outFluxCount', 'inRxns', 'outRxns'} , ',');
     fid = fopen(olfName, 'wt+');
     fprintf(fid, '%s\n', olHeader);
     commLabels = keys(oTrMap);
@@ -268,10 +272,12 @@ function analysis = runAnalysis(modelMap, mediaType)
       degOutStr = strjoin(                                      ...
         cellFlatMap(@(x) num2str(x), num2cell(rec.degreesOut)), ...
         ';');
-      fprintf(fid, '%s,%d,%s,%d,%s,%d,%s,%d,%d,%d,%d\n',                ...
+      inRxnStr = strjoin(rec.inFluxRxns, ';');
+      outRxnStr = strjoin(rec.outFluxRxns, ';');
+      fprintf(fid, '%s,%d,%s,%d,%s,%d,%s,%d,%d,%d,%d,%s,%s\n',          ...
               rec.label, rec.size, rec.org, rec.overlapIn, degInStr,    ...
               rec.overlapOut, degOutStr, rec.inFluxSum, rec.outFluxSum, ...
-              rec.inFluxCount, rec.outFluxCount                         ...
+              rec.inFluxCount, rec.outFluxCount, inRxnStr, outRxnStr    ...
              );
     end
     fclose(fid);

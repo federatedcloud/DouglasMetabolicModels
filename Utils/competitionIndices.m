@@ -5,12 +5,17 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
   rxns = model.rxns;
   nSpecies = numel(model.infoCom.spAbbr);
 
+  fluxThreshold = 0;
+  fluxIsIn = flux < -1 * fluxThreshold;
+  fluxIsOut = flux > fluxThreshold;
+
   exRxnGroups = readExRxnGroups();
   inorgExRxnPrefixes = exRxnGroups(inorganicIonGroupName());
   inorgExRxns = cellFlatMap(@(r) strrep(r, '_e', '[u]'), inorgExRxnPrefixes);
 
   % transRxns = rxns(cellfun(@(x) ~isempty(x), regexp(rxns, '^[A-Z]{2}IEX.*tr$')));
   exRxns = rxns(cellfun(@(x) ~isempty(x), regexp(rxns, '^EX.*\[u\]$')));
+  trRxns = findTrRxns(model);
   exRxnsNoInorg = setdiff(exRxns, inorgExRxns);
   overlappingTr = cmpIndInner(exRxns);
   overlappingTrNoInorg = cmpIndInner(exRxnsNoInorg);
@@ -73,9 +78,15 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
       end % of for sIx
       for ii = 1:nSpecies
         org = model.infoCom.spAbbr{ii};
+        orgTrRxns = filter1d(@(r) startsWith(r, org), trRxns);
+        orgTrRxnIxs = contains(model.rxns, orgTrRxns);
+        inFluxTrIxs = fluxIsIn & orgTrRxnIxs;
+        outFluxTrIxs = fluxIsOut & orgTrRxnIxs ;
         orgStats = overlapping(org);
-        orgStats.inFluxCount = sum(flux(exRxnSetIxs) < 0);
-        orgStats.outFluxCount = sum(flux(exRxnSetIxs) > 0);
+        orgStats.inFluxCount = sum(inFluxTrIxs);
+        orgStats.outFluxCount = sum(outFluxTrIxs);
+        orgStats.inFluxRxns = model.rxns(inFluxTrIxs);
+        orgStats.outFluxRxns = model.rxns(outFluxTrIxs);
         overlapping(org) = orgStats;
       end  % end of for ii = 1:nSpecies
     end % of function addOrgStats
