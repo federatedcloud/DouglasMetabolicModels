@@ -13,14 +13,19 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
   inorgExRxnPrefixes = exRxnGroups(inorganicIonGroupName());
   inorgExRxns = cellFlatMap(@(r) strrep(r, '_e', '[u]'), inorgExRxnPrefixes);
 
+  trRxnGroups = readTrRxnGroups();
+  inorgTrRxnsPrefixes = trRxnGroups(inorganicIonGroupName());
+  inorgTrRxns = model.rxns(catSpeciesRxnPrefixes(inorgTrRxnsPrefixes, model));
+
   % transRxns = rxns(cellfun(@(x) ~isempty(x), regexp(rxns, '^[A-Z]{2}IEX.*tr$')));
   exRxns = rxns(cellfun(@(x) ~isempty(x), regexp(rxns, '^EX.*\[u\]$')));
   trRxns = findTrRxns(model);
   exRxnsNoInorg = setdiff(exRxns, inorgExRxns);
-  overlappingTr = cmpIndInner(exRxns);
-  overlappingTrNoInorg = cmpIndInner(exRxnsNoInorg);
+  trRxnsNoInorg = setdiff(trRxns, inorgTrRxns);
+  overlappingTr = cmpIndInner(exRxns, trRxns);
+  overlappingTrNoInorg = cmpIndInner(exRxnsNoInorg, trRxnsNoInorg);
 
-  function overlappingTr = cmpIndInner(exRxnSet)
+  function overlappingTr = cmpIndInner(exRxnSet, trRxnSet)
     exRxnSetIxs = find(contains(model.rxns, exRxnSet));
     compIdxOut = cellFlatMap(@(r) competitionIndex(r, model, flux), exRxnSet);
     dataLines = cellFlatMap(@(x) x{1}, compIdxOut);
@@ -78,7 +83,7 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
       end % of for sIx
       for ii = 1:nSpecies
         org = model.infoCom.spAbbr{ii};
-        orgTrRxns = filter1d(@(r) startsWith(r, org), trRxns);
+        orgTrRxns = filter1d(@(r) startsWith(r, org), trRxnSet);
         orgTrRxnIxs = contains(model.rxns, orgTrRxns);
         inFluxTrIxs = fluxIsIn & orgTrRxnIxs;
         outFluxTrIxs = fluxIsOut & orgTrRxnIxs ;
