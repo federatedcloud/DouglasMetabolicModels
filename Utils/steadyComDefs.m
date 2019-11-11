@@ -46,6 +46,6 @@ if allGrow
   options.BMcon = diag(ones(nSpecies, 1));
   options.BMrhs = repmat(0.0001, nSpecies, 1)';
   options.BMcsense = [strjoin(repmat({'G'}, nSpecies, 1), '')];
-  options.BMweight = 0.001;
+  options.BMweight = 0.0005;
   % options.feasCrit = 2;
 end
