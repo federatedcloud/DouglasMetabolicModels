@@ -12,7 +12,7 @@ function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
 %                     from other models in no particular order.
 % Authors: Brandon Barker
 
-  mediaTypeOptions = {'rich', 'minimal', 'minimal-merge', 'minimal-plus'};
+  mediaTypeOptions = {'rich', 'minimal', 'minimal-merge', 'minimal-plus', 'unbounded'};
 
   keysSz = size(modelKeys);
   if keysSz(1) == 1
@@ -66,7 +66,9 @@ function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
   elseif strcmp(mediaType, 'minimal')
     multiModel = createMinModel(multiModel);
   elseif strcmp(mediaType, 'rich')
-    multiModel = capBounds(multiModel, 100);
+    multiModel = createRichModel(multiModel);
+  elseif strcmp(mediaType, 'unbounded')
+    multiModel = multiModel;
   end
 
   % subsumed by builtin constraints in 04/11/19 models
