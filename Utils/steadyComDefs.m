@@ -42,10 +42,11 @@ nSpecies = length(multiModel.infoCom.spAbbr);
 % which seems to work well:
 
 if allGrow
+  BMmin = 0.00001;
   disp("all grow");
   options.BMcon = diag(ones(nSpecies, 1));
-  options.BMrhs = repmat(0.0001, nSpecies, 1)';
+  options.BMrhs = repmat(BMmin, nSpecies, 1)';
   options.BMcsense = [strjoin(repmat({'G'}, nSpecies, 1), '')];
-  options.BMweight = 0.0005;
+  options.BMweight = BMmin;
   % options.feasCrit = 2;
 end

@@ -21,7 +21,9 @@ function [sol, resMed, LP, LPminNorm] = runSteadyComFVAMedoid(multiModel, otherO
   % vBMmedoid = [0.0001, 0.0001, 0.0003, 0.0149, 0.8249]'; % For testing
   mu = sum(vBMmedoid);
   if mu > 0
-    bmRHS = vBMmedoid/mu - epsilon;
+    vbm = vBMmedoid/mu - epsilon;
+    grMaxMean = mean(GRvector)
+    bmRHS = vbm / grMaxMean;
     fvaOpts.BMcon = diag(ones(nSpecies, 1));
     fvaOpts.BMrhs = bmRHS;
     fvaOpts.BMcsense = [strjoin(repmat({'G'}, nSpecies, 1), '')];
