@@ -53,8 +53,8 @@ function tables = genHeatMapTables(analysis)
     rxnHeaders(end-nOrgsTotal:end-1) = ...
       cellFlatMap(@(s) strjoin({'Biomass_', s}, ''), allSpecies);
     groupHeaders(end-nOrgsTotal:end-1) = deal({'Biomass'});
-    rxnHeaders(end) = {'CommunityGrowth'};
-    groupHeaders(end) = {'CommunityGrowth'};
+    rxnHeaders(end) = {'GRmax'};
+    groupHeaders(end) = {'GRmax'};
     function excRxnIds = excMultiSub(rxnIds, multiModel)
       rxnIdsMMT = union( ...
         cellFlatMap(@(r) regexprep(r, '_e$', '[u]'), rxnIds), ...
