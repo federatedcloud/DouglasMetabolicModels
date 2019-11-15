@@ -6,8 +6,9 @@
 % Only transport reactions and efflux-exchange reactions are considered.
 %
 function tables = genHeatMapTables(analysis)
-  allSpecies = {'AF', 'AP', 'AT', 'LB', 'LP'};
+  allSpecies = analysis.fvalues{1}.model.infoCom.spAbbr;
   nOrgsTotal = numel(allSpecies);
+  vBM_rxnName = 'biomass';
 
   trRxnGroups = readTrRxnGroups();
   exRxnGroups = readExRxnGroups();
@@ -37,8 +38,8 @@ function tables = genHeatMapTables(analysis)
     nFluxes = countRxnsInIdMap(rxnGroups);
 
     groupNames = keys(rxnGroups);
-    groupHeaders = cell(nFluxes + nOrgsTotal + 1, 1); % fluxes + BM + GRmax
-    rxnHeaders = cell(nFluxes + nOrgsTotal + 1, 1); % fluxes + BM + GRmax
+    rxnHeaders = cell(nFluxes + nOrgsTotal + 3, 1); % fluxes + BM + (BM all + vBM all + GRmax)
+    groupHeaders = cell(numel(rxnHeaders), 1);
     rowPos = 0;
     for ii = 1:numel(groupNames)
       groupName = groupNames{ii};
@@ -50,11 +51,16 @@ function tables = genHeatMapTables(analysis)
         rxnHeaders(rowPos) = {rxnId};
       end
     end
+    rxnHeaders(end-nOrgsTotal-2) = {'vBM'};
+    groupHeaders(end-nOrgsTotal-2) = {'vBM'};
+    rxnHeaders(end-nOrgsTotal-1) = {'BM'};
+    groupHeaders(end-nOrgsTotal-1) = {'BM'};
     rxnHeaders(end-nOrgsTotal:end-1) = ...
-      cellFlatMap(@(s) strjoin({'Biomass_', s}, ''), allSpecies);
+      cellFlatMap(@(s) strjoin({'BM_', s}, ''), allSpecies);
     groupHeaders(end-nOrgsTotal:end-1) = deal({'Biomass'});
     rxnHeaders(end) = {'GRmax'};
-    groupHeaders(end) = {'GRmax'};
+    groupHeaders(end) = {'Community Growth Rate'};
+
     function excRxnIds = excMultiSub(rxnIds, multiModel)
       rxnIdsMMT = union( ...
         cellFlatMap(@(r) regexprep(r, '_e$', '[u]'), rxnIds), ...
@@ -186,6 +192,7 @@ function tables = genHeatMapTables(analysis)
     comms = sortByColFun({@(x) numel(x), @(x) x}, [1, 1], keys(commGroupMap));
     nComs = numel(comms);
     fluxPos = 2; % Header columns occupy cols 1 & 2, so start below at 3.
+    vBM_tblRows = find(endsWith(rxnHeaders, vBM_rxnName)) + fluxPos;
     for ii = 1:nComs
       comm = comms{ii};
       orgCommKeys = sortByColFun( ...
@@ -194,6 +201,9 @@ function tables = genHeatMapTables(analysis)
       for jj = 1:nOrgs
         fluxPos = fluxPos + 1;
         orgComKey = orgCommKeys{jj};
+        org = orgPart(orgComKey);
+        orgsInComm = split(commPart(orgComKey), '_');
+        orgIx = find(strcmp(org, orgsInComm));
         cellTbl(1, fluxPos) = {comm};
         cellTbl(2, fluxPos) = {orgPart(orgComKey)};
         fluxes = fluxMap(orgComKey);
@@ -204,8 +214,11 @@ function tables = genHeatMapTables(analysis)
           rows = rowIxMap(rxnIx);
           cellTbl(2 + rows, fluxPos) = num2cell(fluxes(kk));
         end
-        cellTbl(end-nOrgsTotal:end-1, fluxPos) = ...
-          makeFullBMvec(resultMap(comm).BM, modelMap(comm));
+        cellTbl(end-nOrgsTotal-2, fluxPos) = ...
+          cellColFun(@(x) max(x), cellTbl(vBM_tblRows, fluxPos));
+        fullBMvec = makeFullBMvec(resultMap(comm).BM, modelMap(comm));
+        cellTbl(end-nOrgsTotal-1, fluxPos) = num2cell(resultMap(comm).BM(orgIx));
+        cellTbl(end-nOrgsTotal:end-1, fluxPos) = fullBMvec;
         cellTbl(end, fluxPos) = num2cell(resultMap(comm).GRmax);
       end
     end % of for ii = 1:nComs
