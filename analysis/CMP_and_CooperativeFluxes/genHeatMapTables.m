@@ -214,8 +214,13 @@ function tables = genHeatMapTables(analysis)
           rows = rowIxMap(rxnIx);
           cellTbl(2 + rows, fluxPos) = num2cell(fluxes(kk));
         end
-        cellTbl(end-nOrgsTotal-2, fluxPos) = ...
-          cellColFun(@(x) max(x), cellTbl(vBM_tblRows, fluxPos));
+        if isTrans
+          cellTbl(end-nOrgsTotal-2, fluxPos) = ...
+            cellColFun(@(x) max(x), cellTbl(vBM_tblRows, fluxPos));
+        else
+          fullvBMvec = cellTbl(vBM_tblRows, fluxPos);
+          cellTbl(end-nOrgsTotal-2, fluxPos) = num2cell(fullvBMvec(orgIx));
+        end
         fullBMvec = makeFullBMvec(resultMap(comm).BM, modelMap(comm));
         cellTbl(end-nOrgsTotal-1, fluxPos) = num2cell(resultMap(comm).BM(orgIx));
         cellTbl(end-nOrgsTotal:end-1, fluxPos) = fullBMvec;
