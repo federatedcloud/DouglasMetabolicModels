@@ -24,7 +24,6 @@ function [ssVals, comps, memFun] = cellPowerSetFilter(fun, pred, carray, compare
   loop(setInit, valInit);
 
   function loop(ssetIn, parentValue)
-    disp("hello from loop")
     currentValue = memFun(ssetIn);
     ssVals{end+1} = currentValue;
     comps{end+1} = compare(currentValue, parentValue);

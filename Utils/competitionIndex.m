@@ -51,7 +51,9 @@ function funOut = competitionIndex(rxn, model, flux)
       if flux(rxnIx) > 0
         outFluxSum = flux(rxnIx);
       end
-      statsOut = {netCIx, inFluxIx, outFluxIx, inOrgs, outOrgs, inFluxSum, outFluxSum};
+      inRxns = cellFlatMap(@(r) r(3:end), inRxns);
+      outRxns = cellFlatMap(@(r) r(3:end), outRxns);
+      statsOut = {netCIx, inFluxIx, outFluxIx, inOrgs, outOrgs, inFluxSum, outFluxSum, inRxns, outRxns};
       funOut = {lineOut, statsOut};
     end
   end

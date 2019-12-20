@@ -37,9 +37,10 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
     % dataOut = strjoin({header, dataOut}, '\n');
 
     % iKeys = cellFlatMap(@(x) num2str(x), num2cell(1:nSpecies));
-    [repOLapStruct{1:nSpecies}] = deal(struct(                             ...
-      'countIn', 0, 'listIn', [], 'countOut', 0, 'listOut', [],            ...
-      'inFluxSum', 0, 'outFluxSum', 0, 'inFluxCount', 0, 'outFluxCount', 0 ...
+    [repOLapStruct{1:nSpecies}] = deal(struct(                              ...
+      'countIn', 0, 'listIn', [], 'countOut', 0, 'listOut', [],             ...
+      'inFluxSum', 0, 'outFluxSum', 0, 'inFluxCount', 0, 'outFluxCount', 0, ...
+      'inRxnsOverlap', {{}}, 'outRxnsOverlap', {{}}, 'org', struct(struct())    ...
     ));
     for ii = 1:nSpecies
       rs = repOLapStruct{ii};
@@ -56,6 +57,7 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
         ss = dataStats{sIx};
         inFluxIx = str2double(ss{2});
         inOrgs = ss{4};
+        inRxns = ss{8};
         assert(inFluxIx == numel(inOrgs));
         for oIx = 1:inFluxIx
           org = inOrgs{oIx};
@@ -64,11 +66,13 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
           if inFluxIx > 1
             orgStats.countIn = orgStats.countIn + 1;
             orgStats.listIn = [orgStats.listIn (inFluxIx-1)];
+            orgStats.inRxnsOverlap{end+1} = inRxns(1);
             overlapping(org) = orgStats;
           end % if inFluxIx
         end % of for oIx
         outFluxIx = str2double(ss{3});
         outOrgs = ss{5};
+        outRxns = ss{9};
         assert(outFluxIx == numel(outOrgs));
         for oIx = 1:outFluxIx
           org = outOrgs{oIx};
@@ -77,6 +81,7 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
           if outFluxIx > 1
             orgStats.countOut = orgStats.countOut + 1;
             orgStats.listOut = [orgStats.listOut (outFluxIx-1)];
+            orgStats.outRxnsOverlap{end+1} = outRxns(1);
             overlapping(org) = orgStats;
           end % if outFluxIx
         end % of for oIx
@@ -92,6 +97,8 @@ function [overlappingTr, overlappingTrNoInorg] = competitionIndices(model, flux)
         orgStats.outFluxCount = sum(outFluxTrIxs);
         orgStats.inFluxRxns = model.rxns(inFluxTrIxs);
         orgStats.outFluxRxns = model.rxns(outFluxTrIxs);
+        orgStats.inRxnsOverlap = cellFlatMap(@(x) x{1}, orgStats.inRxnsOverlap);
+        orgStats.outRxnsOverlap = cellFlatMap(@(x) x{1}, orgStats.outRxnsOverlap);
         overlapping(org) = orgStats;
       end  % end of for ii = 1:nSpecies
     end % of function addOrgStats

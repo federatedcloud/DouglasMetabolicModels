@@ -230,6 +230,8 @@ function analysis = runAnalysis(modelMap, mediaType)
         oTrData.outFluxCount = olapIO.outFluxCount;
         oTrData.inFluxRxns = olapIO.inFluxRxns;
         oTrData.outFluxRxns = olapIO.outFluxRxns;
+        oTrData.inRxnsOverlap = olapIO.inRxnsOverlap;
+        oTrData.outRxnsOverlap = olapIO.outRxnsOverlap;
         oTrKey = strjoin({oTrData.label,oTrData.org }, ';');
         oTrMap(oTrKey) = oTrData;
       end
@@ -252,6 +254,8 @@ function analysis = runAnalysis(modelMap, mediaType)
         oTrData.outFluxCount = olapIO.outFluxCount;
         oTrData.inFluxRxns = olapIO.inFluxRxns;
         oTrData.outFluxRxns = olapIO.outFluxRxns;
+        oTrData.inRxnsOverlap = olapIO.inRxnsOverlap;
+        oTrData.outRxnsOverlap = olapIO.outRxnsOverlap;
         oTrKey = strjoin({oTrData.label,oTrData.org }, ';');
         oTrMap(oTrKey) = oTrData;
       end
@@ -259,7 +263,8 @@ function analysis = runAnalysis(modelMap, mediaType)
     olfName = strjoin({outDirectory, filesep, 'overlap', oLabel, '.csv'}, '');
     olHeader = strjoin({'Community', '#species', 'Org', 'overlapIn', 'degreeIn', ...
                         'overlapOut', 'degreeOut', 'inFluxSum', 'outFluxSum',   ...
-                        'inFluxCount', 'outFluxCount', 'inRxns', 'outRxns'} , ',');
+                        'inFluxCount', 'outFluxCount', 'inRxns', 'outRxns', ...
+                        'inRxnsOverlap', 'outRxnsOverlap'} , ',');
     fid = fopen(olfName, 'wt+');
     fprintf(fid, '%s\n', olHeader);
     commLabels = keys(oTrMap);
@@ -274,10 +279,13 @@ function analysis = runAnalysis(modelMap, mediaType)
         ';');
       inRxnStr = strjoin(rec.inFluxRxns, ';');
       outRxnStr = strjoin(rec.outFluxRxns, ';');
-      fprintf(fid, '%s,%d,%s,%d,%s,%d,%s,%d,%d,%d,%d,%s,%s\n',          ...
+      inRxnOlapStr = strjoin(rec.inRxnsOverlap, ';');
+      outRxnOlapStr = strjoin(rec.outRxnsOverlap, ';');
+      fprintf(fid, '%s,%d,%s,%d,%s,%d,%s,%d,%d,%d,%d,%s,%s,%s,%s\n',    ...
               rec.label, rec.size, rec.org, rec.overlapIn, degInStr,    ...
               rec.overlapOut, degOutStr, rec.inFluxSum, rec.outFluxSum, ...
-              rec.inFluxCount, rec.outFluxCount, inRxnStr, outRxnStr    ...
+              rec.inFluxCount, rec.outFluxCount, inRxnStr, outRxnStr,   ...
+              inRxnOlapStr, outRxnOlapStr                               ...
              );
     end
     fclose(fid);
