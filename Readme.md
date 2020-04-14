@@ -11,7 +11,17 @@ instructions, but should do everything else mentioned under Nix (and Docker if u
 Run `initDMM` from this (top-level directory) in MATLAB. This will
 add paths to the environment.
 
-Afterward, you still need to run `initCobraToolbox` from your `cobratoolbox` directory.
+Afterward, you still need to run `initCobraToolbox` from your `cobratoolbox` directory. 
+
+Currently, the installed version of COBRA Toolbox doesn't work as it is required to be mutable, but once it does,
+one could do `cd(getenv('COBRA_HOME'))` before running `initCobraToolbox(false)`.
+
+If you get a git related error during the run of `initCobraToolbox` related to submodules,
+try running the command outside fo MATLAB. Typically this is one of:
+
+```
+git submodule update --init --remote --no-fetch
+```
 
 # Species
 
