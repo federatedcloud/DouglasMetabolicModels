@@ -23,7 +23,7 @@ try running the command outside fo MATLAB. Typically this is one of:
 git submodule update --init --remote --no-fetch
 ```
 
-# Species
+## Species
 
 The following species are considered as part of the *Drosophila* gut microbiome, and the repository includes
 models for these species:
@@ -35,7 +35,7 @@ models for these species:
 * *Lactobacillus* *plantarum*
 
 
-# Notes
+## Notes
 
 When running any analysis that makes use of SteadyComFVA:
 
@@ -44,5 +44,17 @@ When running any analysis that makes use of SteadyComFVA:
 - Do not change the paralell pool size if restarting a run (if you do, clear the checkpoint `.mat` files and start again.
 
 
-## Priority Effects
+# Priority Effects
 
+For the priority effects simulations, we use Haskell to call out to MATLAB,
+so Haskell performs the scheduling of simulations and analyses, while MATLAB
+more directly handles the simulations (metabolic modeling).
+
+With nix, you can get an appropriate environment setup by running `nix-shell` in this
+(repository root) directory. Otherwise, see `shell.nix` and translate that to your
+environment/OS.
+
+After running `nix-shell` or otherwise setting up appropriate dependencies and environment
+variables, you can run the `./build.sh` script to build and install Haskell binaries used
+for analyses. For more information on the Haskell-MATLAB integration, see the upstream
+[git repository](https://github.com/cornellcac/haskell-matlab).
