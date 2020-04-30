@@ -37,7 +37,7 @@ packages:
 #
 extra-deps:
   - git: https://github.com/CornellCAC/haskell-matlab.git
-    commit: f07f3dce2b5774b29f87f086019bc269c2d818f2 
+    commit: 6931edb1f505aaedf5017016b5ac8608c7b5039e
 
 #   haskell-matlab
 # - acme-missiles-0.3
