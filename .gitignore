@@ -11,3 +11,6 @@
 .stack-work/
 
 patchMatlab.lock
+
+# log files
+log_prioSims.txt

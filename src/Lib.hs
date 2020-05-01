@@ -39,6 +39,13 @@ travToMXArray xs = do
   pure mxarr
 
 -- | Wrapper for `disp` in MATLAB; mostuly for debugging/info
-disp :: MXArrayComponent a => Engine -> MXArray a -> IO ()
+disp :: MXArrayComponent a => Engine -> MXArray a -> MIO ()
 disp eng arr = engineEvalFun eng "disp" [EvalArray arr] 0 <&> discard
 
+
+
+diaryFile :: Engine -> Path b File -> MIO ()
+diaryFile e logFile = engineEval e $ "diary " <> (toFilePath logFile)
+
+diaryOn :: Engine -> MIO ()
+diaryOn e = engineEval e "diary on"
