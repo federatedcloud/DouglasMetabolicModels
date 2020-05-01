@@ -3,7 +3,7 @@
 module Main where
 
 import Foreign.Matlab.Engine
-import Lib
+import COBRA
 import Path
 
 main :: IO ()

@@ -27,7 +27,14 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      COBRA
+      COBRA.Analysis
+      COBRA.MATLAB
+      COBRA.MATLAB.Analysis
+      COBRA.MATLAB.Engine.Util
+      COBRA.MATLAB.Util
+      COBRA.Syntax
+      
   -- other-modules:
   --     Paths_DouglasMetabolicModels
   hs-source-dirs:
