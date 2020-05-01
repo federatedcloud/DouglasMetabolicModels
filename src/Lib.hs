@@ -4,6 +4,7 @@ module Lib where
 
 import Data.Foldable (toList)
 import Data.List (permutations)
+import Control.Lens
 import Foreign.Matlab
 import Foreign.Matlab.Array
 import Foreign.Matlab.Engine
@@ -19,16 +20,25 @@ type MArrayFun a = forall b. MType b b => a -> IO (MXArray b)
 absolveUnits :: f () -> ()
 absolveUnits _ = ()
 
+discard :: a -> ()
+discard _ = ()
 
 runAll :: Monad t => [t ()] -> t ()
 runAll as = absolveUnits <$> sequence as
 
-permList :: Integer -> [[Integer]]
+permList :: Int -> [[Int]]
 permList n = permutations [1..n]
 
+permListMX :: Int -> MIO [MXArray MDouble]
+permListMX n = permList n ^.. folded . to (fmap fromIntegral) <&> travToMXArray & sequence
 
 travToMXArray :: (Traversable t, MXArrayComponent a) => t a -> MIO (MXArray a)
 travToMXArray xs = do
   mxarr <- createMXArray [1, length xs]
   mxArraySetAll mxarr (toList xs) 
   pure mxarr
+
+-- | Wrapper for `disp` in MATLAB; mostuly for debugging/info
+disp :: MXArrayComponent a => Engine -> MXArray a -> IO ()
+disp eng arr = engineEvalFun eng "disp" [EvalArray arr] 0 <&> discard
+
