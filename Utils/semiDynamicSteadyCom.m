@@ -1,4 +1,4 @@
-function schedRes = semiDynamicSteadyCom(modelMap, schedule, options, varargin)
+function schedRes = semiDynamicSteadyCom(modelMap, schedule, optsOverride, varargin)
 % Find the maximum community growth rate at community steady-state using the `SteadyCom` algorithm
 % using the following heuristic assumptions:
 % 1. Start with an initial organsim (species) and media (media is implied by the initial model
@@ -10,13 +10,14 @@ function schedRes = semiDynamicSteadyCom(modelMap, schedule, options, varargin)
 % TODO: at what level do we handle Memoization, e.g. https://wiki.haskell.org/Memoization
 %     : I'm currently thinking we want to do the memoization in MATLAB to allow (hopefully)
 %     : different schedules to use the same computed result, even if executed by different FFI calls
+% NOTE: checkEssentiality(modelCom, mediaRxns) also needs to be memoized.
 
   fluxThresh = 1e-7;
   growThresh = 1e-7;
   
   numSteps = length(schedule);
 
-  initCom = modelMap(schedule(1));
+  initCom = modelMap(schedule{1});
 
   currentOrgKeys = {};
   fluxPrior = [];
@@ -32,37 +33,40 @@ function schedRes = semiDynamicSteadyCom(modelMap, schedule, options, varargin)
       modelPrior = modelCom;
     end
     % Currently, a schedule has a single organism at each step:
-    currentSched = schedule(ii);
+    currentSched = schedule{ii};
     currentOrgKeys = union(currentOrgKeys, {currentSched});
 
-    modelCom = makeMultiModel(currentOrgKeys, modelMap, 'minimal-plus');
-    commName = commStr(modelCom);
-    essentialRxns = checkEssentiality(modelCom, rxns);
+    [modelCom, mediaRxns] = makeMultiModel(currentOrgKeys, modelMap, 'minimal-plus');
+    commName = commString(modelCom);
+    essentialRxns = checkEssentiality(modelCom, mediaRxns);
 
     if ii > 1
-      modelCom.lb = updateLB(modelCom, modelPrior, essInfo)
+      modelCom.lb = updateLB(modelCom, modelPrior, essentialRxns);
     end
 
-    [sol result LP LPminNorm] = SteadyCom(modelCom, schedule, options, varargin{:});
-    schedRes.(commName) = struct(           ...
+    options = steadyComDefs(modelCom)
+    options.BMcon
+    if nargin > 2
+      options = mergeStructs(options, optsOverride);
+    end
+    [sol result LP LPminNorm] = SteadyCom(modelCom, options, varargin{:});
+    outStruct = struct(                     ...
       'sol', sol,                           ...
       'result', result,                     ...
       'LP', LP,                             ...
       'LPminNorm', LPminNorm,               ...
-      'essentialRxns', essentialRxns,       ...
+      'essentialRxns', {essentialRxns},     ... % gave to wrap this in {} or else struct-arrayified
       'newOrgs', {currentSched}             ...
     );
+    schedRes = setfield(schedRes, commName, outStruct);
     
     fluxPrior = result.flux;
-    result.essential = essentialRxns;
   end
 
-
-  # TODO: priorFlux should probably be calculated as the minFVA value
   function newLB = updateLB(model, modelPrior, essInfo)
     newLB = model.lb;
 
-    for ri == 1:length(essInfo)
+    for ri = 1:length(essInfo)
       essi = essInfo{ii};
       % If it is not essential:
       if (essi.scomGrowth > growThresh)

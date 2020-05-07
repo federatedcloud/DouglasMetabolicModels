@@ -1,4 +1,4 @@
-function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
+function [multiModel, rxns] = makeMultiModel(modelKeys, modelMap, mediaType)
 % makeMultiModel
 %   modelKeys is a cell array of strings that index into modelMap;
 %             these should be the model names.
@@ -12,6 +12,7 @@ function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
 %                     from other models in no particular order.
 % Authors: Brandon Barker
 
+  rxns = {};
   mediaTypeOptions = {'rich', 'minimal', 'minimal-merge', 'minimal-plus', 'unbounded'};
 
   keysSz = size(modelKeys);
@@ -62,11 +63,11 @@ function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
       disp(horzcat(multiModel.rxns(afterMisses), multiModel.rxnNames(afterMisses)));
     end
   elseif strcmp(mediaType, 'minimal-plus')
-    multiModel = createMinimalPlusModel(multiModel);
+    [multiModel, rxns] = createMinimalPlusModel(multiModel);
   elseif strcmp(mediaType, 'minimal')
-    multiModel = createMinModel(multiModel);
+    [multiModel, rxns] = createMinModel(multiModel);
   elseif strcmp(mediaType, 'rich')
-    multiModel = createRichModel(multiModel);
+    [multiModel, rxns] = createRichModel(multiModel);
   elseif strcmp(mediaType, 'unbounded')
     multiModel = multiModel;
   end

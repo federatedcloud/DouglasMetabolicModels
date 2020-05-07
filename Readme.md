@@ -46,6 +46,8 @@ When running any analysis that makes use of SteadyComFVA:
 
 # Priority Effects
 
+(WIP: especially the nix-shell)
+
 For the priority effects simulations, we use Haskell to call out to MATLAB,
 so Haskell performs the scheduling of simulations and analyses, while MATLAB
 more directly handles the simulations (metabolic modeling).
