@@ -14,7 +14,7 @@ haskell.lib.buildStackProject {
   libPath = deps.libPath;
   src = null;
   shellHook = ''
-    export MATLAB_PATH=${deps.matlabPath}
+    export MATLAB_PATH=${deps.hsMatlab.matlabPath}
     export PATH=$PATH:$MATLAB_PATH/bin
 
     source ${./patchMATLAB.sh}
