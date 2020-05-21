@@ -18,7 +18,13 @@ main = do
   -- Pure Haskell version:
   -- let pl = permList 5
   -- runAll $ (putStrLn . show) <$> pl
+
+  initHSMatlabEngineEnv eng [initDMM, initCobraToolbox]
   pure ()
 
 logFile :: Path Rel File
 logFile = $(mkRelFile "log_prioSims.txt")
+
+initDMM :: Engine -> IO ()
+initDMM eng = do
+  engineEvalProc eng "initDMM" []
