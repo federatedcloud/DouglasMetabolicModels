@@ -12,6 +12,7 @@ initCobraToolbox eng = do
   engineEvalProc eng "initCobraToolbox" []
   
 
+-- Ideally a UIO (Either String (Path Abs Dir)
 pwd :: Engine -> IO (Path Abs Dir)
 pwd eng = do
   [pwdDirAnyArr] <- engineEvalFun eng "pwd" [] 1
