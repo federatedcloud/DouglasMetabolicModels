@@ -9,7 +9,11 @@ function schedRes = semiDynamicSteadyCom(modelMap, schedule, optsOverride, varar
 
 % TODO: at what level do we handle Memoization, e.g. https://wiki.haskell.org/Memoization
 %     : I'm currently thinking we want to do the memoization in MATLAB to allow (hopefully)
-%     : different schedules to use the same computed result, even if executed by different FFI calls
+%     : different schedules to use the same computed result, even if executed by different FFI calls.
+%     : The proper idea here is partial schedules. This would require changing this to be a recursive function.
+%     : But can we reorganize it so that the recursion is done in Haskell? First we should prototype it here
+%     : and see if get basically the same results.
+%
 % NOTE: checkEssentiality(modelCom, mediaRxns) also needs to be memoized.
 
   fluxThresh = 1e-7;
