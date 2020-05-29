@@ -26,7 +26,7 @@ function schedRes = semiDynamicSteadyCom(modelMap, schedule, schedRes, optsOverr
   nSpecies = numel(modelCom.infoCom.spAbbr);
 
   if nSpecies > 1
-    modelCom.lb = semiDynamicSteadComUpdateBounds( ...
+    modelCom.lb = semiDynamicSteadyComUpdateBounds( ...
       modelCom, modelPrior, schedRes{end}.result.flux, essentialRxns);
   end
 

@@ -1,4 +1,4 @@
-function newLB = semiDynamicSteadComUpdateBounds(model, modelPrior, fluxPrior, essInfo, mediaRxns)
+function newLB = semiDynamicSteadyComUpdateBounds(model, modelPrior, fluxPrior, essInfo, mediaRxns)
   fluxThresh = 1e-7;
   growThresh = 1e-7;
 
@@ -13,7 +13,8 @@ function newLB = semiDynamicSteadComUpdateBounds(model, modelPrior, fluxPrior, e
     rxnIxCurr = find(strcmp(model.rxns, neRxn));
     % It is being consumed priorly, so we constrain to zero
     if fluxPrior(rxnIxPrior) < -fluxThresh
-      newLB(rxnIxCurr) = 0;
+      % newLB(rxnIxCurr) = 0;
+      newLB(rxnIxCurr) =  0.2 * fluxPrior(rxnIxPrior);
     end    
   end
 end

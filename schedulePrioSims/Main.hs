@@ -1,9 +1,12 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 module Main where
 
+import Foreign.Matlab
 import Foreign.Matlab.Engine
 import COBRA
+import qualified Data.Map.Strict as DM
 import Path
 
 main :: IO ()
@@ -28,3 +31,32 @@ logFile = $(mkRelFile "log_prioSims.txt")
 initDMM :: Engine -> IO ()
 initDMM eng = do
   engineEvalProc eng "initDMM" []
+
+type VarArgIn = DM.Map String MAnyArray
+
+newtype MultiModel = MultiModel { unMultiModel :: MStructArray }
+
+newtype SpeciesAbbr = SpeciesAbbr { unSpeciesAbbr :: String }
+
+newtype ScheduleResult = ScheduleResult { unScheduleResult :: MXArray MCell }
+
+newtype SteadyComOpts = SteadyComOpts { unSteadyComOpts :: MStructArray }
+
+type ModelMap = DM.Map SpeciesAbbr MultiModel
+
+semiDynamicSteadyCom :: Engine
+  -> ModelMap
+  -- ^ List of multi-species models.
+  -> [SpeciesAbbr]
+  -> ScheduleResult
+  -> Maybe SteadyComOpts
+  -> VarArgIn
+  -> ScheduleResult
+
+semiDynamicSteadyCom (eng :: Engine)
+  (modelMap :: ModelMap)
+  (schedule :: [SpeciesAbbr])
+  (schedRes :: ScheduleResult)
+  (optsOverride :: Maybe SteadyComOpts)
+  (varargin :: VarArgIn) =
+  schedRes -- TODO

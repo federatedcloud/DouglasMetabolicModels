@@ -57,6 +57,7 @@ executable schedulePrioSims
   build-depends:
       DouglasMetabolicModels
     , base >=4.7 && <5
+    , containers >= 0.6.0.1
     , matlab >=0.2 && <0.3
     , path
   default-language: Haskell2010
