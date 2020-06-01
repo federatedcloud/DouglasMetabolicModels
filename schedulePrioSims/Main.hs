@@ -40,9 +40,13 @@ newtype SpeciesAbbr = SpeciesAbbr { unSpeciesAbbr :: String }
 
 newtype ScheduleResult = ScheduleResult { unScheduleResult :: MXArray MCell }
 
-newtype SteadyComOpts = SteadyComOpts { unSteadyComOpts :: MStructArray }
+-- TODO: is it a struct or struct array?
+newtype SteadyComOpts = SteadyComOpts { unSteadyComOpts :: MStruct }
 
 type ModelMap = DM.Map SpeciesAbbr MultiModel
+
+-- | Wraps a struct containing essentiality information
+newtype EssInfo = EssInfo { unEssInfo :: MStruct }
 
 semiDynamicSteadyCom :: Engine
   -> ModelMap
@@ -60,3 +64,18 @@ semiDynamicSteadyCom (eng :: Engine)
   (optsOverride :: Maybe SteadyComOpts)
   (varargin :: VarArgIn) =
   schedRes -- TODO
+
+checkEssentiality :: Engine -> MultiModel -> [String] -> IO (Either String [EssInfo])
+checkEssentiality eng model rxns = do
+  rxnsCA <- cellFromListsIO rxns
+  [res] <- engineEvalFun eng "checkEssentiality" [
+      EvalArray $ anyMXArray $ unMultiModel model
+    , EvalArray $ anyMXArray rxnsCA] 1
+  essArrMay :: Maybe MStructArray <- castMXArray res
+  listOfStructsMay <- sequence $ mxArrayGetAll <$> essArrMay
+  pure $ (fmap . fmap) EssInfo (mayToEi "checkEssentiality: couldn't cast" listOfStructsMay)
+
+mayToEi :: e -> Maybe a -> Either e a
+mayToEi err ma = case ma of
+  Just a -> Right a
+  Nothing -> Left err

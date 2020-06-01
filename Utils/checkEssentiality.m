@@ -1,6 +1,6 @@
 function essentialRxns = checkEssentiality(model, rxns)
-  essentialRxns = {};
   numRxns = numel(rxns);
+  essentialRxns = cell(numRxns, 1);
   for ii = 1:numRxns
     modelDel = changeRxnBounds(model, rxns(ii), 0, 'b');
     [sol, res] = runSteadyCom(modelDel);
@@ -14,4 +14,5 @@ function essentialRxns = checkEssentiality(model, rxns)
       essentialRxns{end+1} = output;
     end
   end
+  essentialRxns = [essentialRxns{:}];
 end
