@@ -1,10 +1,10 @@
-function newLB = semiDynamicSteadyComUpdateBounds(model, modelPrior, fluxPrior, essInfo, mediaRxns)
+function newLB = semiDynamicSteadyComUpdateBounds(model, modelPrior, fluxPrior, essInfo)
   fluxThresh = 1e-7;
   growThresh = 1e-7;
 
   newLB = model.lb;
 
-  essRxns = cellFlatMap(@(es) es.rxn{1}, essInfo);
+  essRxns = cellFlatMap(@(es) es.rxn{1}, num2cell(essInfo));
   nonEssRxns = setdiff(model.rxns, essRxns);
 
   for ri = 1:length(nonEssRxns)

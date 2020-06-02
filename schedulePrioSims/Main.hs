@@ -65,6 +65,30 @@ semiDynamicSteadyCom (eng :: Engine)
   (varargin :: VarArgIn) =
   schedRes -- TODO
 
+-- | Helper function to determine how bounds are changed based on
+-- | prior model state.
+semiDynamicSteadyComUpdateBounds :: Engine
+  -> MultiModel
+  -> MultiModel
+  -> MXArray MDouble
+  -> [EssInfo]
+  -> IO (Either String (MXArray MDouble))
+semiDynamicSteadyComUpdateBounds (eng :: Engine)
+  (model :: MultiModel)
+  (modelPrior :: MultiModel)
+  (fluxPrior :: MXArray MDouble)
+  (essInfo :: [EssInfo]) = do
+  mxEssInfo <- fromListIO $ unEssInfo <$> essInfo
+  [res] <- engineEvalFun eng "semiDynamicSteadyComUpdateBounds" [
+      EvalArray $ anyMXArray $ unMultiModel model
+    , EvalArray $ anyMXArray $ unMultiModel modelPrior
+    , EvalArray $ anyMXArray fluxPrior
+    , EvalArray $ anyMXArray mxEssInfo
+    ] 1
+  errMsg <$> castMXArray res
+  where
+    errMsg = mayToEi "semiDynamicSteadyComUpdateBounds: couldn't cast"
+
 checkEssentiality :: Engine -> MultiModel -> [String] -> IO (Either String [EssInfo])
 checkEssentiality eng model rxns = do
   rxnsCA <- cellFromListsIO rxns
@@ -76,6 +100,4 @@ checkEssentiality eng model rxns = do
   pure $ (fmap . fmap) EssInfo (mayToEi "checkEssentiality: couldn't cast" listOfStructsMay)
 
 mayToEi :: e -> Maybe a -> Either e a
-mayToEi err ma = case ma of
-  Just a -> Right a
-  Nothing -> Left err
+mayToEi err = maybe (Left err) Right
