@@ -3,11 +3,14 @@
 
 module Main where
 
-import Foreign.Matlab
-import Foreign.Matlab.Engine
-import COBRA
+import           Control.Monad (join)
+import           Data.Coerce (coerce)
+import           Foreign.Matlab
+import           Foreign.Matlab.Engine
+import           Foreign.Matlab.Engine.Wrappers
+import           COBRA
 import qualified Data.Map.Strict as DM
-import Path
+import           Path
 
 main :: IO ()
 main = do
@@ -32,15 +35,14 @@ initDMM :: Engine -> IO ()
 initDMM eng = do
   engineEvalProc eng "initDMM" []
 
-type VarArgIn = DM.Map String MAnyArray
-
-newtype MultiModel = MultiModel { unMultiModel :: MStructArray }
+newtype MultiModel = MultiModel { unMultiModel :: MStruct }
 
 newtype SpeciesAbbr = SpeciesAbbr { unSpeciesAbbr :: String }
 
+newtype StepResult = StepResult { unStepResult :: MStruct }
+
 newtype ScheduleResult = ScheduleResult { unScheduleResult :: MXArray MCell }
 
--- TODO: is it a struct or struct array?
 newtype SteadyComOpts = SteadyComOpts { unSteadyComOpts :: MStruct }
 
 type ModelMap = DM.Map SpeciesAbbr MultiModel
@@ -78,10 +80,10 @@ semiDynamicSteadyComUpdateBounds (eng :: Engine)
   (modelPrior :: MultiModel)
   (fluxPrior :: MXArray MDouble)
   (essInfo :: [EssInfo]) = do
-  mxEssInfo <- fromListIO $ unEssInfo <$> essInfo
+  mxEssInfo <- fromListIO $ (coerce essInfo :: [MStruct])
   [res] <- engineEvalFun eng "semiDynamicSteadyComUpdateBounds" [
-      EvalArray $ anyMXArray $ unMultiModel model
-    , EvalArray $ anyMXArray $ unMultiModel modelPrior
+      EvalStruct $ unMultiModel model
+    , EvalStruct $ unMultiModel modelPrior
     , EvalArray $ anyMXArray fluxPrior
     , EvalArray $ anyMXArray mxEssInfo
     ] 1
@@ -89,11 +91,45 @@ semiDynamicSteadyComUpdateBounds (eng :: Engine)
   where
     errMsg = mayToEi "semiDynamicSteadyComUpdateBounds: couldn't cast"
 
+
+semiDynamicSteadyComStep :: Engine
+  -> MultiModel
+  -> [SpeciesAbbr]
+  -> SteadyComOpts
+  -> [EssInfo]
+  -> VarArgIn
+  -> IO (Either String StepResult)
+semiDynamicSteadyComStep (eng :: Engine)
+  (modelCom :: MultiModel)
+  (currentSched :: [SpeciesAbbr])
+  (optsOverride :: SteadyComOpts)
+  (essentialRxns :: [EssInfo])
+  (varargin :: VarArgIn) = do
+  mxEssInfo <- fromListIO $ (coerce essentialRxns :: [MStruct])
+  mxCurrentSched <- mxSchedule currentSched
+  let mxVarargin = mxVarArgs varargin
+  allArgs <- pure $ [
+      EvalStruct $ unMultiModel modelCom
+    , EvalArray $ anyMXArray mxCurrentSched
+    , EvalStruct $ unSteadyComOpts optsOverride
+    , EvalArray $ anyMXArray mxEssInfo
+    ] ++ mxVarargin
+  [res] <- engineEvalFun eng "semiDynamicSteadyComStep" allArgs 1
+  resArrEi <- errMsg <$> castMXArray res
+  resStructEi <- join <$> (sequence $ mxArrayGetFirst <$> resArrEi)
+  pure $ StepResult <$> resStructEi
+  where
+    errMsg = mayToEi "semiDynamicSteadyComStep: couldn't cast"
+
+
+mxSchedule :: [SpeciesAbbr] -> IO (MXArray MCell)
+mxSchedule sched = cellFromListsIO $ (coerce sched :: [String])
+
 checkEssentiality :: Engine -> MultiModel -> [String] -> IO (Either String [EssInfo])
 checkEssentiality eng model rxns = do
   rxnsCA <- cellFromListsIO rxns
   [res] <- engineEvalFun eng "checkEssentiality" [
-      EvalArray $ anyMXArray $ unMultiModel model
+      EvalStruct $ unMultiModel model
     , EvalArray $ anyMXArray rxnsCA] 1
   essArrMay :: Maybe MStructArray <- castMXArray res
   listOfStructsMay <- sequence $ mxArrayGetAll <$> essArrMay
