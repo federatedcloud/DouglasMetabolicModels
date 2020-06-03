@@ -3,6 +3,7 @@
 
 module Main where
 
+import           Control.Lens
 import           Control.Monad (join)
 import           Data.Coerce (coerce)
 import           Foreign.Matlab
@@ -35,20 +36,26 @@ initDMM :: Engine -> IO ()
 initDMM eng = do
   engineEvalProc eng "initDMM" []
 
-newtype MultiModel = MultiModel { unMultiModel :: MStruct }
+newtype MultiModel = MultiModel { _multiModel :: MStruct }
+makeLenses '' MultiModel
 
-newtype SpeciesAbbr = SpeciesAbbr { unSpeciesAbbr :: String }
+newtype SpeciesAbbr = SpeciesAbbr { _speciesAbbr :: String }
+makeLenses '' SpeciesAbbr
 
-newtype StepResult = StepResult { unStepResult :: MStruct }
+newtype StepResult = StepResult { _stepResult :: MStruct }
+makeLenses '' StepResult
 
-newtype ScheduleResult = ScheduleResult { unScheduleResult :: MXArray MCell }
+newtype ScheduleResult = ScheduleResult { _scheduleResult :: MXArray MCell }
+makeLenses '' ScheduleResult
 
-newtype SteadyComOpts = SteadyComOpts { unSteadyComOpts :: MStruct }
+newtype SteadyComOpts = SteadyComOpts { _steadyComOpts :: MStruct }
+makeLenses '' SteadyComOpts
 
 type ModelMap = DM.Map SpeciesAbbr MultiModel
 
 -- | Wraps a struct containing essentiality information
-newtype EssInfo = EssInfo { unEssInfo :: MStruct }
+newtype EssInfo = EssInfo { _essInfo :: MStruct }
+makeLenses '' EssInfo
 
 semiDynamicSteadyCom :: Engine
   -> ModelMap
@@ -59,13 +66,23 @@ semiDynamicSteadyCom :: Engine
   -> VarArgIn
   -> ScheduleResult
 
+--Base case
 semiDynamicSteadyCom (eng :: Engine)
   (modelMap :: ModelMap)
-  (schedule :: [SpeciesAbbr])
+  ([] :: [SpeciesAbbr])
   (schedRes :: ScheduleResult)
   (optsOverride :: Maybe SteadyComOpts)
-  (varargin :: VarArgIn) =
-  schedRes -- TODO
+  (varargin :: VarArgIn)
+    = schedRes
+
+-- semiDynamicSteadyCom (eng :: Engine)
+--   (modelMap :: ModelMap)
+--   (currentSched:schedRemain :: [SpeciesAbbr])
+--   (schedRes :: ScheduleResult)
+--   (optsOverride :: Maybe SteadyComOpts)
+--   (varargin :: VarArgIn) = do
+    
+    
 
 -- | Helper function to determine how bounds are changed based on
 -- | prior model state.
@@ -82,8 +99,8 @@ semiDynamicSteadyComUpdateBounds (eng :: Engine)
   (essInfo :: [EssInfo]) = do
   mxEssInfo <- fromListIO $ (coerce essInfo :: [MStruct])
   [res] <- engineEvalFun eng "semiDynamicSteadyComUpdateBounds" [
-      EvalStruct $ unMultiModel model
-    , EvalStruct $ unMultiModel modelPrior
+      EvalStruct $ model ^. multiModel
+    , EvalStruct $ modelPrior ^. multiModel
     , EvalArray $ anyMXArray fluxPrior
     , EvalArray $ anyMXArray mxEssInfo
     ] 1
@@ -109,9 +126,9 @@ semiDynamicSteadyComStep (eng :: Engine)
   mxCurrentSched <- mxSchedule currentSched
   let mxVarargin = mxVarArgs varargin
   allArgs <- pure $ [
-      EvalStruct $ unMultiModel modelCom
+      EvalStruct $ modelCom ^. multiModel
     , EvalArray $ anyMXArray mxCurrentSched
-    , EvalStruct $ unSteadyComOpts optsOverride
+    , EvalStruct $ optsOverride ^. steadyComOpts
     , EvalArray $ anyMXArray mxEssInfo
     ] ++ mxVarargin
   [res] <- engineEvalFun eng "semiDynamicSteadyComStep" allArgs 1
@@ -129,7 +146,7 @@ checkEssentiality :: Engine -> MultiModel -> [String] -> IO (Either String [EssI
 checkEssentiality eng model rxns = do
   rxnsCA <- cellFromListsIO rxns
   [res] <- engineEvalFun eng "checkEssentiality" [
-      EvalStruct $ unMultiModel model
+      EvalStruct $ model ^. multiModel
     , EvalArray $ anyMXArray rxnsCA] 1
   essArrMay :: Maybe MStructArray <- castMXArray res
   listOfStructsMay <- sequence $ mxArrayGetAll <$> essArrMay
