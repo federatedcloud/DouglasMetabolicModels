@@ -37,7 +37,7 @@ packages:
 #
 extra-deps:
   - git: https://github.com/CornellCAC/haskell-matlab.git
-    commit: 6b7bd39edf34c90dd510c861082f81f1e693c230
+    commit: faaf3afa5c409ddc34dfea688a954c74b58b9b8f
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

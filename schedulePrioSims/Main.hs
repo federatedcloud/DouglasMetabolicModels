@@ -10,9 +10,21 @@ import           Foreign.Matlab
 import           Foreign.Matlab.Engine
 import           Foreign.Matlab.Engine.Wrappers
 import           COBRA
+import           Data.Map.Lens
 import qualified Data.Map.Strict as DM
 import           Path
 
+
+mayToEi :: e -> Maybe a -> Either e a
+mayToEi err = maybe (Left err) Right
+
+mapLast :: (a -> b) -> [a] -> Maybe b
+mapLast f (x:[]) = Just $ f x
+mapLast f (x:xs) = mapLast f xs
+mapLast _ [] = Nothing
+
+-- TODO -- Extract these to new haskell-matlab module
+   
 main :: IO ()
 main = do
   eng <- newEngine ""
@@ -39,6 +51,20 @@ initDMM eng = do
 newtype MultiModel = MultiModel { _multiModel :: MStruct }
 makeLenses '' MultiModel
 
+newtype InfoCom = InfoCom { _infoCom :: MStruct }
+makeLenses '' InfoCom
+
+getInfoCom :: MultiModel -> MIO (Either String InfoCom)
+getInfoCom model = do
+  let infoComAA = model ^. multiModel . mStruct . at "infoCom" & errMsgAt
+  infoComSA <- infoComAA <&> castMXArray & sequence <&> sequence <&> errMsg <&> join
+  infoComFirst <- infoComSA <&> mxArrayGetFirst & sequence <&> join
+  pure $ InfoCom <$> infoComFirst
+  where
+    errMsgAt :: Maybe a -> Either String a
+    errMsgAt = mayToEi "getInfoCom: couldn't find field"
+    errMsg = mayToEi "getInfoCom: couldn't cast"
+
 newtype SpeciesAbbr = SpeciesAbbr { _speciesAbbr :: String }
 makeLenses '' SpeciesAbbr
 
@@ -64,25 +90,30 @@ semiDynamicSteadyCom :: Engine
   -> ScheduleResult
   -> Maybe SteadyComOpts
   -> VarArgIn
-  -> ScheduleResult
+  -> IO ScheduleResult
 
---Base case
+-- Base case
+semiDynamicSteadyCom (eng :: Engine)
+  (_        :: ModelMap)
+  ([]       :: [SpeciesAbbr])
+  (schedRes :: ScheduleResult)
+  (_        :: Maybe SteadyComOpts)
+  (_        :: VarArgIn)
+    = pure schedRes
+
+-- Inductive case
 semiDynamicSteadyCom (eng :: Engine)
   (modelMap :: ModelMap)
-  ([] :: [SpeciesAbbr])
+  (currentSched:schedRemain :: [SpeciesAbbr])
   (schedRes :: ScheduleResult)
   (optsOverride :: Maybe SteadyComOpts)
-  (varargin :: VarArgIn)
-    = schedRes
-
--- semiDynamicSteadyCom (eng :: Engine)
---   (modelMap :: ModelMap)
---   (currentSched:schedRemain :: [SpeciesAbbr])
---   (schedRes :: ScheduleResult)
---   (optsOverride :: Maybe SteadyComOpts)
---   (varargin :: VarArgIn) = do
-    
-    
+  (varargin :: VarArgIn) = do
+    arrays <- schedRes ^. scheduleResult & mxCellGetArraysOfType
+    lastResEi :: Either String MStruct <- (mapLast mxArrayGetFirst arrays)
+      & sequence <&> errMsgSchedResEmpty <&> join
+    pure schedRes -- TODO : change this to actual result
+  where
+    errMsgSchedResEmpty = mayToEi "semiDynamicSteadyCom: empty schedRes cell array"
 
 -- | Helper function to determine how bounds are changed based on
 -- | prior model state.
@@ -152,5 +183,3 @@ checkEssentiality eng model rxns = do
   listOfStructsMay <- sequence $ mxArrayGetAll <$> essArrMay
   pure $ (fmap . fmap) EssInfo (mayToEi "checkEssentiality: couldn't cast" listOfStructsMay)
 
-mayToEi :: e -> Maybe a -> Either e a
-mayToEi err = maybe (Left err) Right
