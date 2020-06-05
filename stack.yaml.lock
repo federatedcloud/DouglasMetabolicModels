@@ -13,11 +13,25 @@ packages:
     git: https://github.com/CornellCAC/haskell-matlab.git
     pantry-tree:
       size: 2980
-      sha256: 1e3cf750db3fd4e5fd0add24a692346a838880bc19deead76eca8890f9f30c3d
-    commit: faaf3afa5c409ddc34dfea688a954c74b58b9b8f
+      sha256: 471e94135c7d46433fdd4cf27eac49e8c801cfc3a259bf8fb8a0fc8c19075419
+    commit: 5d62300c03c66f81f87cb5bf5341d4a5ee808f7d
   original:
     git: https://github.com/CornellCAC/haskell-matlab.git
-    commit: faaf3afa5c409ddc34dfea688a954c74b58b9b8f
+    commit: 5d62300c03c66f81f87cb5bf5341d4a5ee808f7d
+- completed:
+    hackage: unexceptionalio-0.5.1@sha256:dfa3da738047ea55825be916559083fe3f0460ec699b3b10b7337edece7f43b3,1721
+    pantry-tree:
+      size: 273
+      sha256: efb406a2a61b558b72dcbd6fb127a77d0cb3b6a72a11fc31cd85be9b079ed98f
+  original:
+    hackage: unexceptionalio-0.5.1
+- completed:
+    hackage: unexceptionalio-trans-0.5.1@sha256:918dc4216966d992d8016453af47d9ccc7d4721557f28e5996fc338c21b22538,1425
+    pantry-tree:
+      size: 229
+      sha256: 23d9ba4f0324d9608e8524b7a1adbef7b33cdff7de263bb3f528e4172726b915
+  original:
+    hackage: unexceptionalio-trans-0.5.1
 snapshots:
 - completed:
     size: 524996

@@ -13,32 +13,37 @@ import           COBRA
 import           Data.Map.Lens
 import qualified Data.Map.Strict as DM
 import           Path
+import           ZIO.Trans
 
+data Env = Env {engine :: Engine}
+  deriving Eq
 
-mayToEi :: e -> Maybe a -> Either e a
-mayToEi err = maybe (Left err) Right
+zslift :: IO a -> ZIO r String a
+zslift = (withZIO show) . zlift
 
-mapLast :: (a -> b) -> [a] -> Maybe b
-mapLast f (x:[]) = Just $ f x
-mapLast f (x:xs) = mapLast f xs
-mapLast _ [] = Nothing
-
--- TODO -- Extract these to new haskell-matlab module
-   
 main :: IO ()
 main = do
   eng <- newEngine ""
-  diaryFile eng logFile
-  diaryOn eng
-  pl <- permListMX 5
+  let env = Env eng
+  runApp app env
+  where
+    runApp a r = runZIO a r putStrLn
 
-  runAll $ (disp eng) <$> pl
+app :: ZIO Env String ()
+app = do
+  env <- ask
+  let eng = engine env
+  zslift $ diaryFile eng logFile
+  zslift $ diaryOn eng
+  pl <- zslift $ permListMX 5
+
+  zslift $ runAll $ (disp eng) <$> pl
 
   -- Pure Haskell version:
   -- let pl = permList 5
   -- runAll $ (putStrLn . show) <$> pl
 
-  initHSMatlabEngineEnv eng [initDMM, initCobraToolbox]
+  zslift $ initHSMatlabEngineEnv eng [initDMM, initCobraToolbox]
   pure ()
 
 logFile :: Path Rel File
@@ -57,8 +62,8 @@ makeLenses '' InfoCom
 getInfoCom :: MultiModel -> MIO (Either String InfoCom)
 getInfoCom model = do
   let infoComAA = model ^. multiModel . mStruct . at "infoCom" & errMsgAt
-  infoComSA <- infoComAA <&> castMXArray & sequence <&> sequence <&> errMsg <&> join
-  infoComFirst <- infoComSA <&> mxArrayGetFirst & sequence <&> join
+  infoComSA <- infoComAA & traverse castMXArray <&> sequence <&> errMsg <&> join
+  infoComFirst <- infoComSA & traverse mxArrayGetFirst <&> join
   pure $ InfoCom <$> infoComFirst
   where
     errMsgAt :: Maybe a -> Either String a
