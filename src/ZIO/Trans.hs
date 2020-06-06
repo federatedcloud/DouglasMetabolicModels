@@ -4,6 +4,7 @@
 module ZIO.Trans (
     EIO, ZIO
   , elift, zlift
+  , mapError
   , runZIO
   , withZIO
   , module Control.Monad.Reader
@@ -21,10 +22,10 @@ import           UnexceptionalIO.Trans (UIO, fromIO, run)
 
 -- | Corresponds to IO[E, A] in Scala
 newtype EIO e a = EIO { _unEIO :: ExceptT e UIO a }
-  deriving ( Functor, Applicative, Monad, MonadFix, Unexceptional )
+  deriving ( Functor, Applicative, Monad, MonadError e, MonadFix, Unexceptional )
 
 newtype ZIO r e a = ZIO { _unZIO :: ReaderT r (EIO e) a }
-  deriving ( Functor, Applicative, Monad, MonadFix, MonadReader r, Unexceptional )
+  deriving ( Functor, Applicative, Monad, MonadError e, MonadFix, MonadReader r, Unexceptional )
 
 runZIO :: MonadIO m => ZIO r e a -> r -> (e -> m a) -> m a
 runZIO app env handler = do
@@ -39,7 +40,16 @@ elift ioa =  EIO (fromIO ioa)
 zlift :: IO a -> ZIO r SomeNonPseudoException a
 zlift ioa = (ZIO . lift . elift) ioa
 
-withZIO :: (SomeNonPseudoException -> e) -> ZIO r SomeNonPseudoException a -> ZIO r e a
-withZIO etfun app = do
+withZIO :: r -> (e -> e') -> ZIO r e a -> ZIO r e' a
+withZIO r h =  ZIO
+             . lift
+             . EIO
+             . withExceptT h
+             . _unEIO
+             . flip runReaderT r
+             . _unZIO
+
+mapError :: (e -> e') -> ZIO r e a -> ZIO r e' a
+mapError h m = do
   r <- ask
-  ZIO $ lift $ EIO $ ((withExceptT etfun) . _unEIO) (runReaderT (_unZIO app) r)
+  withZIO r h m

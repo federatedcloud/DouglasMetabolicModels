@@ -19,7 +19,7 @@ data Env = Env {engine :: Engine}
   deriving Eq
 
 zslift :: IO a -> ZIO r String a
-zslift = (withZIO show) . zlift
+zslift = (mapError show) . zlift
 
 main :: IO ()
 main = do
