@@ -1,5 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+
 
 module ZIO.Trans (
     EIO, ZIO
@@ -17,6 +19,7 @@ import           Control.Monad.IO.Class (MonadIO,)
 import           Control.Monad.Reader hiding (lift)
 import           Control.Monad.Trans.Class (lift)
 import           Control.Monad.Trans.Except
+import           Data.Void (Void)
 import           UnexceptionalIO hiding (fromIO, lift, run)
 import           UnexceptionalIO.Trans (UIO, fromIO, run)
 
@@ -26,6 +29,13 @@ newtype EIO e a = EIO { _unEIO :: ExceptT e UIO a }
 
 newtype ZIO r e a = ZIO { _unZIO :: ReaderT r (EIO e) a }
   deriving ( Functor, Applicative, Monad, MonadError e, MonadFix, MonadReader r, Unexceptional )
+
+type URIO r a = ZIO r Void a
+
+type Task a = forall r. ZIO r SomeNonPseudoException a
+
+type RIO r a = ZIO r SomeNonPseudoException a
+
 
 runZIO :: MonadIO m => ZIO r e a -> r -> (e -> m a) -> m a
 runZIO app env handler = do
