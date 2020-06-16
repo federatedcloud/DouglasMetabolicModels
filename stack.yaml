@@ -37,9 +37,11 @@ packages:
 #
 extra-deps:
   - git: https://github.com/CornellCAC/haskell-matlab.git
-    commit: 5d62300c03c66f81f87cb5bf5341d4a5ee808f7d
+    commit: a8d606f6aa89bf57957ad7ecfd4a77f16703c038
   - unexceptionalio-0.5.1
   - unexceptionalio-trans-0.5.1
+  - git : https://github.com/bbarker/haskell-zio.git
+    commit: c113c27fc41dfc5c75db441651d5df09d4b78b2a
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

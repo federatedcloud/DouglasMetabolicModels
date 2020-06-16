@@ -6,18 +6,18 @@
 packages:
 - completed:
     cabal-file:
-      size: 4234
-      sha256: bfefddf137b008c644a4d109a4fad5d8d44deab6fe5669064febf699884c87fe
+      size: 4567
+      sha256: cde71fde6587a214d781d08c0ffd5df5625098d466b0f636e9900f2c2afd3663
     name: matlab
     version: 0.2.0.0
     git: https://github.com/CornellCAC/haskell-matlab.git
     pantry-tree:
-      size: 2980
-      sha256: 471e94135c7d46433fdd4cf27eac49e8c801cfc3a259bf8fb8a0fc8c19075419
-    commit: 5d62300c03c66f81f87cb5bf5341d4a5ee808f7d
+      size: 3325
+      sha256: 7934d079d6791c02d4e43d7ef94f53651b64bc5811d1754ffc8b694eed211d40
+    commit: a8d606f6aa89bf57957ad7ecfd4a77f16703c038
   original:
     git: https://github.com/CornellCAC/haskell-matlab.git
-    commit: 5d62300c03c66f81f87cb5bf5341d4a5ee808f7d
+    commit: a8d606f6aa89bf57957ad7ecfd4a77f16703c038
 - completed:
     hackage: unexceptionalio-0.5.1@sha256:dfa3da738047ea55825be916559083fe3f0460ec699b3b10b7337edece7f43b3,1721
     pantry-tree:
@@ -32,6 +32,20 @@ packages:
       sha256: 23d9ba4f0324d9608e8524b7a1adbef7b33cdff7de263bb3f528e4172726b915
   original:
     hackage: unexceptionalio-trans-0.5.1
+- completed:
+    cabal-file:
+      size: 1537
+      sha256: 8cc58d3cdd033fcc6dfc0aee062bb8b78dc68fa19917223a958a059e329ac8e3
+    name: zio
+    version: 0.1.0.0
+    git: https://github.com/bbarker/haskell-zio.git
+    pantry-tree:
+      size: 727
+      sha256: 0113be0e8e23a1c244eae34ca4dfd4e29cbae6820c111fd1479322ccc6f6a9c5
+    commit: c113c27fc41dfc5c75db441651d5df09d4b78b2a
+  original:
+    git: https://github.com/bbarker/haskell-zio.git
+    commit: c113c27fc41dfc5c75db441651d5df09d4b78b2a
 snapshots:
 - completed:
     size: 524996

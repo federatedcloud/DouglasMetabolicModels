@@ -15,11 +15,11 @@ import qualified Data.Map.Strict as DM
 import           Path
 import           ZIO.Trans
 
-data Env = Env {engine :: Engine}
+data Env = Env {mEngine :: Engine}
   deriving Eq
 
 zslift :: IO a -> ZIO r String a
-zslift = (mapError show) . zlift
+zslift = (mapZError show) . zlift
 
 main :: IO ()
 main = do
@@ -32,7 +32,7 @@ main = do
 app :: ZIO Env String ()
 app = do
   env <- ask
-  let eng = engine env
+  let eng = mEngine env
   zslift $ diaryFile eng logFile
   zslift $ diaryOn eng
   pl <- zslift $ permListMX 5
