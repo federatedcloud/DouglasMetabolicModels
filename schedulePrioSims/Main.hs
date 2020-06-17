@@ -18,6 +18,12 @@ import           ZIO.Trans
 data Env = Env {mEngine :: Engine}
   deriving Eq
 
+instance HasEngine Env where
+  getEngine = mEngine
+
+instance SetEngine Env where
+  setEngine env eng = env {mEngine = eng}
+
 zslift :: IO a -> ZIO r String a
 zslift = (mapZError show) . zlift
 
@@ -32,7 +38,7 @@ main = do
 app :: ZIO Env String ()
 app = do
   env <- ask
-  let eng = mEngine env
+  let eng = getEngine env
   zslift $ diaryFile eng logFile
   zslift $ diaryOn eng
   pl <- zslift $ permListMX 5
