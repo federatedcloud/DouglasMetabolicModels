@@ -3,12 +3,15 @@
 
 module Main where
 
+import           Control.Arrow ((>>>))
 import           Control.Lens
 import           Control.Monad (join)
 import           Data.Coerce (coerce)
 import           Foreign.Matlab
-import           Foreign.Matlab.Engine
-import           Foreign.Matlab.Engine.Wrappers
+import           Foreign.Matlab.ZIOArray
+import           Foreign.Matlab.ZIOEngine
+import           Foreign.Matlab.ZIOEngine.Wrappers
+import           Foreign.Matlab.ZIOTypes
 import           COBRA
 import           Data.Map.Lens
 import qualified Data.Map.Strict as DM
@@ -24,6 +27,8 @@ instance HasEngine Env where
 instance SetEngine Env where
   setEngine env eng = env {mEngine = eng}
 
+type AppEnv a = ZIO Env MatlabException a
+
 zslift :: IO a -> ZIO r String a
 zslift = (mapZError show) . zlift
 
@@ -33,31 +38,31 @@ main = do
   let env = Env eng
   runApp app env
   where
-    runApp a r = runZIO a r putStrLn
+    runApp a r = runZIO a r (putStrLn . show)
 
-app :: ZIO Env String ()
+app :: AppEnv ()
 app = do
   env <- ask
   let eng = getEngine env
-  zslift $ diaryFile eng logFile
-  zslift $ diaryOn eng
-  pl <- zslift $ permListMX 5
+  diaryFile logFile
+  diaryOn
+  pl <- permListMX 5
 
-  zslift $ runAll $ (disp eng) <$> pl
+  runAll $ disp <$> pl
 
   -- Pure Haskell version:
   -- let pl = permList 5
   -- runAll $ (putStrLn . show) <$> pl
 
-  zslift $ initHSMatlabEngineEnv eng [initDMM, initCobraToolbox]
+  initHSMatlabEngineEnv [initDMM, initCobraToolbox]
   pure ()
 
 logFile :: Path Rel File
 logFile = $(mkRelFile "log_prioSims.txt")
 
-initDMM :: Engine -> IO ()
-initDMM eng = do
-  engineEvalProc eng "initDMM" []
+initDMM :: AppEnv ()
+initDMM = do
+  engineEvalProc "initDMM" []
 
 newtype MultiModel = MultiModel { _multiModel :: MStruct }
 makeLenses '' MultiModel
@@ -65,16 +70,15 @@ makeLenses '' MultiModel
 newtype InfoCom = InfoCom { _infoCom :: MStruct }
 makeLenses '' InfoCom
 
-getInfoCom :: MultiModel -> MIO (Either String InfoCom)
+getInfoCom :: MultiModel -> AppEnv InfoCom
 getInfoCom model = do
-  let infoComAA = model ^. multiModel . mStruct . at "infoCom" & errMsgAt
-  infoComSA <- infoComAA & traverse castMXArray <&> sequence <&> errMsg <&> join
-  infoComFirst <- infoComSA & traverse mxArrayGetFirst <&> join
-  pure $ InfoCom <$> infoComFirst
+  infoComAA <- model ^. multiModel . mStruct . at "infoCom" & errMsgAt & liftEither & mxasZ
+  infoComSA <- infoComAA & castMXArray
+  infoComFirst <- infoComSA & mxArrayGetFirst
+  pure $ InfoCom $ infoComFirst
   where
     errMsgAt :: Maybe a -> Either String a
     errMsgAt = mayToEi "getInfoCom: couldn't find field"
-    errMsg = mayToEi "getInfoCom: couldn't cast"
 
 newtype SpeciesAbbr = SpeciesAbbr { _speciesAbbr :: String }
 makeLenses '' SpeciesAbbr
@@ -94,17 +98,15 @@ type ModelMap = DM.Map SpeciesAbbr MultiModel
 newtype EssInfo = EssInfo { _essInfo :: MStruct }
 makeLenses '' EssInfo
 
-semiDynamicSteadyCom :: Engine
-  -> ModelMap
-  -- ^ List of multi-species models.
+semiDynamicSteadyCom :: ModelMap -- ^ List of multi-species models.
   -> [SpeciesAbbr]
   -> ScheduleResult
   -> Maybe SteadyComOpts
   -> VarArgIn
-  -> IO ScheduleResult
+  -> AppEnv ScheduleResult
 
 -- Base case
-semiDynamicSteadyCom (eng :: Engine)
+semiDynamicSteadyCom
   (_        :: ModelMap)
   ([]       :: [SpeciesAbbr])
   (schedRes :: ScheduleResult)
@@ -113,52 +115,49 @@ semiDynamicSteadyCom (eng :: Engine)
     = pure schedRes
 
 -- Inductive case
-semiDynamicSteadyCom (eng :: Engine)
+semiDynamicSteadyCom
   (modelMap :: ModelMap)
   (currentSched:schedRemain :: [SpeciesAbbr])
   (schedRes :: ScheduleResult)
   (optsOverride :: Maybe SteadyComOpts)
   (varargin :: VarArgIn) = do
     arrays <- schedRes ^. scheduleResult & mxCellGetArraysOfType
-    lastResEi :: Either String MStruct <- (mapLast mxArrayGetFirst arrays)
-      & sequence <&> errMsgSchedResEmpty <&> join
+    lastRes :: MStruct <- (mapLast mxArrayGetFirst arrays) & sequence
+      >>= (errMsgSchedResEmpty >>> liftEither >>> mxasZ)
     pure schedRes -- TODO : change this to actual result
   where
     errMsgSchedResEmpty = mayToEi "semiDynamicSteadyCom: empty schedRes cell array"
 
 -- | Helper function to determine how bounds are changed based on
 -- | prior model state.
-semiDynamicSteadyComUpdateBounds :: Engine
-  -> MultiModel
+semiDynamicSteadyComUpdateBounds ::
+     MultiModel
   -> MultiModel
   -> MXArray MDouble
   -> [EssInfo]
-  -> IO (Either String (MXArray MDouble))
-semiDynamicSteadyComUpdateBounds (eng :: Engine)
+  -> AppEnv (MXArray MDouble)
+semiDynamicSteadyComUpdateBounds
   (model :: MultiModel)
   (modelPrior :: MultiModel)
   (fluxPrior :: MXArray MDouble)
   (essInfo :: [EssInfo]) = do
   mxEssInfo <- fromListIO $ (coerce essInfo :: [MStruct])
-  [res] <- engineEvalFun eng "semiDynamicSteadyComUpdateBounds" [
+  res <- engineEvalFun "semiDynamicSteadyComUpdateBounds" [
       EvalStruct $ model ^. multiModel
     , EvalStruct $ modelPrior ^. multiModel
     , EvalArray $ anyMXArray fluxPrior
     , EvalArray $ anyMXArray mxEssInfo
-    ] 1
-  errMsg <$> castMXArray res
-  where
-    errMsg = mayToEi "semiDynamicSteadyComUpdateBounds: couldn't cast"
+    ] 1 >>= headZ "No results from semiDynamicSteadyComUpdateBounds"
+  castMXArray res
 
-
-semiDynamicSteadyComStep :: Engine
-  -> MultiModel
+semiDynamicSteadyComStep ::
+     MultiModel
   -> [SpeciesAbbr]
   -> SteadyComOpts
   -> [EssInfo]
   -> VarArgIn
-  -> IO (Either String StepResult)
-semiDynamicSteadyComStep (eng :: Engine)
+  -> AppEnv StepResult
+semiDynamicSteadyComStep
   (modelCom :: MultiModel)
   (currentSched :: [SpeciesAbbr])
   (optsOverride :: SteadyComOpts)
@@ -173,24 +172,23 @@ semiDynamicSteadyComStep (eng :: Engine)
     , EvalStruct $ optsOverride ^. steadyComOpts
     , EvalArray $ anyMXArray mxEssInfo
     ] ++ mxVarargin
-  [res] <- engineEvalFun eng "semiDynamicSteadyComStep" allArgs 1
-  resArrEi <- errMsg <$> castMXArray res
-  resStructEi <- join <$> (sequence $ mxArrayGetFirst <$> resArrEi)
-  pure $ StepResult <$> resStructEi
-  where
-    errMsg = mayToEi "semiDynamicSteadyComStep: couldn't cast"
+  res <- engineEvalFun "semiDynamicSteadyComStep" allArgs 1
+    >>= headZ "No results from semiDynamicSteadyComStep"
+  resArr <- castMXArray res
+  resStruct <- mxArrayGetFirst resArr
+  pure $ StepResult $ resStruct
 
-
-mxSchedule :: [SpeciesAbbr] -> IO (MXArray MCell)
+mxSchedule :: [SpeciesAbbr] -> AppEnv (MXArray MCell)
 mxSchedule sched = cellFromListsIO $ (coerce sched :: [String])
 
-checkEssentiality :: Engine -> MultiModel -> [String] -> IO (Either String [EssInfo])
+checkEssentiality :: Engine -> MultiModel -> [String] -> AppEnv [EssInfo]
 checkEssentiality eng model rxns = do
   rxnsCA <- cellFromListsIO rxns
-  [res] <- engineEvalFun eng "checkEssentiality" [
+  res <- engineEvalFun "checkEssentiality" [
       EvalStruct $ model ^. multiModel
     , EvalArray $ anyMXArray rxnsCA] 1
-  essArrMay :: Maybe MStructArray <- castMXArray res
-  listOfStructsMay <- sequence $ mxArrayGetAll <$> essArrMay
-  pure $ (fmap . fmap) EssInfo (mayToEi "checkEssentiality: couldn't cast" listOfStructsMay)
+    >>= headZ "No results from checkEssentiality"
+  essArr <- castMXArray res
+  listOfStructs <- mxArrayGetAll essArr
+  pure $ EssInfo <$> listOfStructs
 

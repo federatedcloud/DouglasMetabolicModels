@@ -33,5 +33,3 @@ mapLast :: (a -> b) -> [a] -> Maybe b
 mapLast f (x:[]) = Just $ f x
 mapLast f (x:xs) = mapLast f xs
 mapLast _ [] = Nothing
-
-

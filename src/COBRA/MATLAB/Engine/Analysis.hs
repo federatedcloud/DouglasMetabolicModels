@@ -2,31 +2,32 @@
 -- |a candidate for extraction.
 module COBRA.MATLAB.Engine.Analysis where
 
-import COBRA.Syntax
-import Foreign.Matlab
-import Foreign.Matlab.Engine
-import Path
+import           COBRA.Syntax
+import           Foreign.Matlab
+import           Foreign.Matlab.ZIOEngine
+import           Foreign.Matlab.ZIOArray
+import           Foreign.Matlab.ZIOTypes
+import           Path
+import           ZIO.Trans
 
-initCobraToolbox :: Engine -> IO ()
-initCobraToolbox eng = do
-  engineEvalProc eng "initCobraToolbox" []
+initCobraToolbox :: HasEngine r => ZIO r MatlabException ()
+initCobraToolbox = engineEvalProc "initCobraToolbox" []
   
 
 -- Ideally a UIO (Either String (Path Abs Dir)
-pwd :: Engine -> IO (Path Abs Dir)
-pwd eng = do
-  [pwdDirAnyArr] <- engineEvalFun eng "pwd" [] 1
-  pwdDirCArrMay <- castMXArray pwdDirAnyArr
-  dirOrEmptyStr <- case pwdDirCArrMay of
-    Just pwdDirCArr -> mxArrayGetAll pwdDirCArr
-    Nothing -> pure ""
-  parseAbsDir dirOrEmptyStr
-
+pwd :: HasEngine r => ZIO r MatlabException (Path Abs Dir)
+pwd = do
+  pwdDirAnyArr <- headZ "pwd returned nothing" =<< engineEvalFun "pwd" [] 1
+  pwdDirCArr <- castMXArray pwdDirAnyArr
+  dir <- mxArrayGetAll pwdDirCArr
+  mxleZ . zlift $ parseAbsDir dir
 
 -- TODO: Move to haskell-matlab?
-initHSMatlabEngineEnv :: Engine -> [Engine -> IO ()] -> IO ()
-initHSMatlabEngineEnv eng iFuns = do
-  initDir <- pwd eng
-  putStrLn $ "Starting HS MATLAB initialization in " <> (toFilePath initDir)
-  runAll $ iFuns <*> [eng]
+initHSMatlabEngineEnv :: HasEngine r => [ZIO r MatlabException ()] -> ZIO r MatlabException ()
+initHSMatlabEngineEnv iFuns = do
+  env <- ask
+  let eng = getEngine env
+  initDir <- pwd
+  mxleZ . zlift $ putStrLn $ "Starting HS MATLAB initialization in " <> (toFilePath initDir)
+  runAll iFuns
 
