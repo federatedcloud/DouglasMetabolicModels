@@ -94,9 +94,42 @@ makeLenses '' SteadyComOpts
 
 type ModelMap = DM.Map SpeciesAbbr MultiModel
 
+mmapToMStruct :: ModelMap -> AppEnv MStruct
+mmapToMStruct m = do
+  let sKeys = m & DM.keys <&> _speciesAbbr
+  values <- m & DM.elems <&> (_multiModel >>> createMXScalar) & sequence
+  (zip sKeys (anyMXArray <$> values) & DM.fromList) ^. from mStruct & pure
+
+-- fromMStruct :: MStruct -> DM.Map String MAnyArray
+-- fromMStruct ms = ms ^. mStruct
+
+-- modelMap :: Iso' MStruct ModelMap
+-- modelMap = iso to' from'
+--   where
+--     to' :: MStruct -> ModelMap
+--     to' ms = ms ^. mStruct & DM.mapKeys SpeciesAbbr & DM.map MultiModel
+--     from' :: ModelMap -> MStruct
+--     from' mm = mm ^. mStruct
+
+
 -- | Wraps a struct containing essentiality information
 newtype EssInfo = EssInfo { _essInfo :: MStruct }
 makeLenses '' EssInfo
+
+data MediaType =
+    Minimal
+  | MinimalMerge
+  | MinimalPlus
+  | Rich
+  | Unbounded
+
+instance Show MediaType where
+  show x = case x of
+    Minimal -> "minimal"
+    MinimalMerge -> "minimal-merge"
+    MinimalPlus -> "minimal-plus"
+    Rich -> "rich"
+    Unbounded -> "unbounded"
 
 semiDynamicSteadyCom :: ModelMap -- ^ List of multi-species models.
   -> [SpeciesAbbr]
@@ -181,8 +214,8 @@ semiDynamicSteadyComStep
 mxSchedule :: [SpeciesAbbr] -> AppEnv (MXArray MCell)
 mxSchedule sched = cellFromListsIO $ (coerce sched :: [String])
 
-checkEssentiality :: Engine -> MultiModel -> [String] -> AppEnv [EssInfo]
-checkEssentiality eng model rxns = do
+checkEssentiality :: MultiModel -> [String] -> AppEnv [EssInfo]
+checkEssentiality model rxns = do
   rxnsCA <- cellFromListsIO rxns
   res <- engineEvalFun "checkEssentiality" [
       EvalStruct $ model ^. multiModel
@@ -191,4 +224,17 @@ checkEssentiality eng model rxns = do
   essArr <- castMXArray res
   listOfStructs <- mxArrayGetAll essArr
   pure $ EssInfo <$> listOfStructs
+
+makeMultiModel :: [SpeciesAbbr] -> ModelMap -> MediaType -> AppEnv MultiModel
+makeMultiModel modelKeys modMap mediaType = do
+  species <- cellFromListsIO (coerce modelKeys :: [String])
+  modMapStruct <- mmapToMStruct modMap
+  res <- engineEvalFun "makeMultiModel" [
+      EvalArray species
+    , EvalStruct modMapStruct
+    , EvalStr $ show $ mediaType] 1
+    >>= headZ "No results from makeMultiModel"
+  multiModelSA <- castMXArray res
+  multiModelStruct <- mxArrayGetFirst multiModelSA
+  pure $ MultiModel multiModelStruct
 
