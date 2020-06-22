@@ -13,6 +13,7 @@ import           Foreign.Matlab.ZIOEngine
 import           Foreign.Matlab.ZIOEngine.Wrappers
 import           Foreign.Matlab.ZIOTypes
 import           COBRA
+import           Data.List (intercalate)
 import           Data.Map.Lens
 import qualified Data.Map.Strict as DM
 import           Path
@@ -79,6 +80,17 @@ getInfoCom model = do
   where
     errMsgAt :: Maybe a -> Either String a
     errMsgAt = mayToEi "getInfoCom: couldn't find field"
+
+getSpAbbr :: InfoCom -> AppEnv [SpeciesAbbr]
+getSpAbbr icom = do
+  saAA <- icom ^. infoCom . mStruct . at "spAbbr" & errMsgAt & liftEither & mxasZ
+  saCA :: MXArray MCell <- saAA & castMXArray
+  sas :: [String] <- mxCellGetAllListsOfType saCA
+  pure $ coerce sas
+  where
+    errMsgAt :: Maybe a -> Either String a
+    errMsgAt = mayToEi "getSpAbbr: couldn't find field"
+
 
 newtype SpeciesAbbr = SpeciesAbbr { _speciesAbbr :: String }
 makeLenses '' SpeciesAbbr
@@ -238,3 +250,10 @@ makeMultiModel modelKeys modMap mediaType = do
   multiModelStruct <- mxArrayGetFirst multiModelSA
   pure $ MultiModel multiModelStruct
 
+
+-- | Implemented directly instead of calling MATLAB function
+commString :: MultiModel -> AppEnv String
+commString mm = do
+  infoCom <- getInfoCom mm
+  spAbbrs <- getSpAbbr infoCom
+  pure $ intercalate "_" $ coerce spAbbrs
