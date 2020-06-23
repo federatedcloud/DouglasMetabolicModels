@@ -77,6 +77,9 @@ makeLenses '' SpeciesAbbr
 newtype StepResult = StepResult { _stepResult :: MStruct }
 makeLenses '' StepResult
 
+newtype ScomResult = ScomResult { _scomResult :: MStruct }
+makeLenses '' ScomResult
+
 newtype ScheduleResult = ScheduleResult { _scheduleResult :: MXArray MCell }
 makeLenses '' ScheduleResult
 
@@ -85,8 +88,8 @@ makeLenses '' SteadyComOpts
 
 type ModelMap = DM.Map SpeciesAbbr MultiModel
 
-getStepLast :: ScheduleResult -> AppEnv (Maybe StepResult)
-getStepLast schedr = mxToMaybeZ $ do
+getStepLast :: ScheduleResult -> AppEnv StepResult
+getStepLast schedr = do
   lastCC <- schedr ^. scheduleResult & mxArrayGetLast >>= (mCell >>> castMXArray)
   lastCC & mxArrayGetFirst <&> StepResult
 
@@ -106,6 +109,20 @@ getModel stepr = stepr ^. stepResult . mStruct . at "model" & errMsgAt
   where
     errMsgAt :: Maybe a -> Either String a
     errMsgAt = mayToEi "getModel: couldn't find field"
+
+getResult :: StepResult -> AppEnv ScomResult
+getResult stepr = stepr ^. stepResult . mStruct . at "result" & errMsgAt
+    & liftEither & mxasZ >>= castMXArray >>= mxArrayGetFirst <&> ScomResult
+  where
+    errMsgAt :: Maybe a -> Either String a
+    errMsgAt = mayToEi "getResult: couldn't find field"
+
+getFlux :: ScomResult -> AppEnv (MXArray MDouble)
+getFlux scres = scres ^. scomResult . mStruct . at "flux" & errMsgAt
+    & liftEither & mxasZ >>= castMXArray
+  where
+    errMsgAt :: Maybe a -> Either String a
+    errMsgAt = mayToEi "getFlux: couldn't find field"
 
 getInfoCom :: MultiModel -> AppEnv InfoCom
 getInfoCom model = do
@@ -176,7 +193,7 @@ semiDynamicSteadyCom
   (schedRes :: ScheduleResult)
   (optsOverride :: Maybe SteadyComOpts)
   (varargin :: VarArgIn) = do
-    lastStepMay <- schedRes & getStepLast
+    lastStepMay <- schedRes & getStepLast & mxToMaybeZ
     lastOrgKeys <- maybe (pure []) (getModel >=> getInfoCom >=> getSpAbbr) lastStepMay
     let currentOrgKeys = currentSched:lastOrgKeys
     (modelCom, mediaRxns) <- makeMultiModel currentOrgKeys modelMap MinimalPlus
@@ -184,12 +201,17 @@ semiDynamicSteadyCom
     commName <- commString modelCom
     essentialRxns <- checkEssentiality modelCom mediaRxns
     nSpecies <- modelCom & (getInfoCom >=> getSpAbbr) <&> length
+    modelCom' <-
+      if nSpecies > 1 then do
+        lastStep <- schedRes & getStepLast
+        fluxPrior <- (getResult >=> getFlux) lastStep
+        newLB <- semiDynamicSteadyComUpdateBounds modelCom modelPrior fluxPrior essentialRxns
+        modelCom & multiModel . mStruct . at "lb" ?~ (anyMXArray newLB) & pure
+      else pure modelCom
+    -- scOpts <- maybe ...
+    -- outStep <- semiDynamicSteadyComStep modelCom' [currentSched]
 
     pure schedRes -- TODO : change this to actual result
-  where
-    errMsgSchedResEmpty = mayToEi "semiDynamicSteadyCom: empty schedRes cell array"
-    errMsgAt :: Maybe a -> Either String a
-    errMsgAt = mayToEi "semiDynamicSteadyCom: couldn't find field 'model'"
 
 
 -- | Helper function to determine how bounds are changed based on
