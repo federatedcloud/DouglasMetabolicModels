@@ -71,6 +71,42 @@ makeLenses '' MultiModel
 newtype InfoCom = InfoCom { _infoCom :: MStruct }
 makeLenses '' InfoCom
 
+newtype SpeciesAbbr = SpeciesAbbr { _speciesAbbr :: String }
+makeLenses '' SpeciesAbbr
+
+newtype StepResult = StepResult { _stepResult :: MStruct }
+makeLenses '' StepResult
+
+newtype ScheduleResult = ScheduleResult { _scheduleResult :: MXArray MCell }
+makeLenses '' ScheduleResult
+
+newtype SteadyComOpts = SteadyComOpts { _steadyComOpts :: MStruct }
+makeLenses '' SteadyComOpts
+
+type ModelMap = DM.Map SpeciesAbbr MultiModel
+
+getStepLast :: ScheduleResult -> AppEnv (Maybe StepResult)
+getStepLast schedr = mxToMaybeZ $ do
+  lastCC <- schedr ^. scheduleResult & mxArrayGetLast >>= (mCell >>> castMXArray)
+  lastCC & mxArrayGetFirst <&> StepResult
+
+getSteps :: ScheduleResult -> AppEnv [StepResult]
+getSteps schedr = do
+  allCC :: [MStruct] <- schedr ^. scheduleResult & mxCellGetAllOfType
+  allCC <&> StepResult & pure
+
+stepsToSched :: [StepResult] -> AppEnv ScheduleResult
+stepsToSched steps = do
+  saList :: [MStructArray] <- steps <&> _stepResult & traverse createMXScalar -- & fromListIO <&> ScheduleResult
+  saList <&> anyMXArray <&> MCell & fromListIO <&> ScheduleResult
+
+getModel :: StepResult -> AppEnv MultiModel
+getModel stepr = stepr ^. stepResult . mStruct . at "model" & errMsgAt
+    & liftEither & mxasZ >>= castMXArray >>= mxArrayGetFirst <&> MultiModel
+  where
+    errMsgAt :: Maybe a -> Either String a
+    errMsgAt = mayToEi "getModel: couldn't find field"
+
 getInfoCom :: MultiModel -> AppEnv InfoCom
 getInfoCom model = do
   infoComAA <- model ^. multiModel . mStruct . at "infoCom" & errMsgAt & liftEither & mxasZ
@@ -92,37 +128,11 @@ getSpAbbr icom = do
     errMsgAt = mayToEi "getSpAbbr: couldn't find field"
 
 
-newtype SpeciesAbbr = SpeciesAbbr { _speciesAbbr :: String }
-makeLenses '' SpeciesAbbr
-
-newtype StepResult = StepResult { _stepResult :: MStruct }
-makeLenses '' StepResult
-
-newtype ScheduleResult = ScheduleResult { _scheduleResult :: MXArray MCell }
-makeLenses '' ScheduleResult
-
-newtype SteadyComOpts = SteadyComOpts { _steadyComOpts :: MStruct }
-makeLenses '' SteadyComOpts
-
-type ModelMap = DM.Map SpeciesAbbr MultiModel
-
 mmapToMStruct :: ModelMap -> AppEnv MStruct
 mmapToMStruct m = do
   let sKeys = m & DM.keys <&> _speciesAbbr
   values <- m & DM.elems <&> (_multiModel >>> createMXScalar) & sequence
   (zip sKeys (anyMXArray <$> values) & DM.fromList) ^. from mStruct & pure
-
--- fromMStruct :: MStruct -> DM.Map String MAnyArray
--- fromMStruct ms = ms ^. mStruct
-
--- modelMap :: Iso' MStruct ModelMap
--- modelMap = iso to' from'
---   where
---     to' :: MStruct -> ModelMap
---     to' ms = ms ^. mStruct & DM.mapKeys SpeciesAbbr & DM.map MultiModel
---     from' :: ModelMap -> MStruct
---     from' mm = mm ^. mStruct
-
 
 -- | Wraps a struct containing essentiality information
 newtype EssInfo = EssInfo { _essInfo :: MStruct }
@@ -166,12 +176,21 @@ semiDynamicSteadyCom
   (schedRes :: ScheduleResult)
   (optsOverride :: Maybe SteadyComOpts)
   (varargin :: VarArgIn) = do
-    arrays <- schedRes ^. scheduleResult & mxCellGetArraysOfType
-    lastRes :: MStruct <- (mapLast mxArrayGetFirst arrays) & sequence
-      >>= (errMsgSchedResEmpty >>> liftEither >>> mxasZ)
+    lastStepMay <- schedRes & getStepLast
+    lastOrgKeys <- maybe (pure []) (getModel >=> getInfoCom >=> getSpAbbr) lastStepMay
+    let currentOrgKeys = currentSched:lastOrgKeys
+    (modelCom, mediaRxns) <- makeMultiModel currentOrgKeys modelMap MinimalPlus
+    modelPrior <- maybe (pure modelCom) getModel lastStepMay
+    commName <- commString modelCom
+    essentialRxns <- checkEssentiality modelCom mediaRxns
+    nSpecies <- modelCom & (getInfoCom >=> getSpAbbr) <&> length
+
     pure schedRes -- TODO : change this to actual result
   where
     errMsgSchedResEmpty = mayToEi "semiDynamicSteadyCom: empty schedRes cell array"
+    errMsgAt :: Maybe a -> Either String a
+    errMsgAt = mayToEi "semiDynamicSteadyCom: couldn't find field 'model'"
+
 
 -- | Helper function to determine how bounds are changed based on
 -- | prior model state.
@@ -237,18 +256,24 @@ checkEssentiality model rxns = do
   listOfStructs <- mxArrayGetAll essArr
   pure $ EssInfo <$> listOfStructs
 
-makeMultiModel :: [SpeciesAbbr] -> ModelMap -> MediaType -> AppEnv MultiModel
+makeMultiModel :: [SpeciesAbbr] -> ModelMap -> MediaType -> AppEnv (MultiModel, [String])
 makeMultiModel modelKeys modMap mediaType = do
   species <- cellFromListsIO (coerce modelKeys :: [String])
   modMapStruct <- mmapToMStruct modMap
-  res <- engineEvalFun "makeMultiModel" [
+  resList <- engineEvalFun "makeMultiModel" [
       EvalArray species
     , EvalStruct modMapStruct
-    , EvalStr $ show $ mediaType] 1
-    >>= headZ "No results from makeMultiModel"
+    , EvalStr $ show $ mediaType] 2
+  res <- headZ "No results from makeMultiModel" resList
   multiModelSA <- castMXArray res
   multiModelStruct <- mxArrayGetFirst multiModelSA
-  pure $ MultiModel multiModelStruct
+  rxns <- resList ^? ix 1 & errMsgIx1 & liftEither & mxasZ
+    >>= castMXArray >>= mxCellGetAllListsOfType
+  pure $ (MultiModel multiModelStruct, rxns)
+  where
+    errMsgIx1 :: Maybe a -> Either String a
+    errMsgIx1 = mayToEi "makeMultiModel: couldn't find ix 1"
+
 
 
 -- | Implemented directly instead of calling MATLAB function
