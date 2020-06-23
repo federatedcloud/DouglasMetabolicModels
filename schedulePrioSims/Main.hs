@@ -7,6 +7,7 @@ import           Control.Arrow ((>>>))
 import           Control.Lens
 import           Control.Monad (join)
 import           Data.Coerce (coerce)
+import           Data.Maybe (fromMaybe)
 import           Foreign.Matlab
 import           Foreign.Matlab.ZIOArray
 import           Foreign.Matlab.ZIOEngine
@@ -208,11 +209,10 @@ semiDynamicSteadyCom
         newLB <- semiDynamicSteadyComUpdateBounds modelCom modelPrior fluxPrior essentialRxns
         modelCom & multiModel . mStruct . at "lb" ?~ (anyMXArray newLB) & pure
       else pure modelCom
-    -- scOpts <- maybe ...
-    -- outStep <- semiDynamicSteadyComStep modelCom' [currentSched]
-
-    pure schedRes -- TODO : change this to actual result
-
+    scOpts <- pure $ fromMaybe (SteadyComOpts mStructEmpty) optsOverride
+    outStep <- semiDynamicSteadyComStep modelCom' [currentSched] scOpts essentialRxns varargin
+    priorSteps <- getSteps schedRes
+    stepsToSched $ outStep : priorSteps
 
 -- | Helper function to determine how bounds are changed based on
 -- | prior model state.
