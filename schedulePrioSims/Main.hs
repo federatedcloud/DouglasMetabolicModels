@@ -171,7 +171,8 @@ instance Show MediaType where
     Rich -> "rich"
     Unbounded -> "unbounded"
 
-semiDynamicSteadyCom :: ModelMap -- ^ List of multi-species models.
+semiDynamicSteadyCom ::
+     ModelMap -- ^ List of multi-species models.
   -> [SpeciesAbbr]
   -> ScheduleResult
   -> Maybe SteadyComOpts
@@ -285,7 +286,7 @@ makeMultiModel modelKeys modMap mediaType = do
   resList <- engineEvalFun "makeMultiModel" [
       EvalArray species
     , EvalStruct modMapStruct
-    , EvalStr $ show $ mediaType] 2
+    , EvalString $ show $ mediaType] 2
   res <- headZ "No results from makeMultiModel" resList
   multiModelSA <- castMXArray res
   multiModelStruct <- mxArrayGetFirst multiModelSA
@@ -304,3 +305,46 @@ commString mm = do
   infoCom <- getInfoCom mm
   spAbbrs <- getSpAbbr infoCom
   pure $ intercalate "_" $ coerce spAbbrs
+
+
+runSemiDynamicSteadyCom ::
+     ModelMap  -- ^ List of multi-species models.
+  -> [SpeciesAbbr]
+  -> Maybe SteadyComOpts
+  -> AppEnv ScheduleResult
+
+runSemiDynamicSteadyCom
+  (modelMap :: ModelMap)
+  (schedule :: [SpeciesAbbr])
+  (optsOverride :: Maybe SteadyComOpts) = do
+    origFeasTol <- getLpFeasTol
+    setLpFeasTol 1e-8
+    emptySchedRes <- ScheduleResult <$> fromListIO []
+    schedRes <- semiDynamicSteadyCom
+      modelMap
+      schedule
+      emptySchedRes
+      optsOverride
+      DM.empty
+    setLpFeasTol origFeasTol
+    pure schedRes
+
+--TODO: use bracket to get/set feastol?
+--TODO, but need a ZIO bracket based on: https://hackage.haskell.org/package/unexceptionalio-0.5.1/docs/UnexceptionalIO.html#v:bracket
+
+getLpFeasTol :: AppEnv MDouble
+getLpFeasTol = do
+  res <- engineEvalFun "getCobraSolverParams" [
+      EvalString "LP"
+    , EvalString "feasTol"
+    ] 1 >>= headZ "getLpFeasTol"
+  castMXArray res >>= mxScalarGet
+
+setLpFeasTol :: MDouble -> AppEnv ()
+setLpFeasTol ft = do
+  ftMX <- createMXScalar ft
+  engineEvalProc "changeCobraSolverParams" [
+      EvalString "LP"
+    , EvalString "feasTol"
+    , EvalArray ftMX
+    ]
