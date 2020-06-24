@@ -3,31 +3,40 @@
 module COBRA.MATLAB.Engine.Analysis where
 
 import           COBRA.Syntax
+import           Control.Lens
 import           Foreign.Matlab
 import           Foreign.Matlab.ZIOEngine
+import           Foreign.Matlab.ZIOEngine.Wrappers
 import           Foreign.Matlab.ZIOArray
 import           Foreign.Matlab.ZIOTypes
 import           Path
 import           ZIO.Trans
 
-initCobraToolbox :: HasEngine r => ZIO r MatlabException ()
-initCobraToolbox = engineEvalProc "initCobraToolbox" []
-  
 
--- Ideally a UIO (Either String (Path Abs Dir)
-pwd :: HasEngine r => ZIO r MatlabException (Path Abs Dir)
-pwd = do
-  pwdDirAnyArr <- headZ "pwd returned nothing" =<< engineEvalFun "pwd" [] 1
-  pwdDirCArr <- castMXArray pwdDirAnyArr
-  dir <- mxArrayGetAll pwdDirCArr
-  mxleZ . zlift $ parseAbsDir dir
+class HasCobraDir env where
+  getCobraDir :: env -> Path Abs Dir
 
--- TODO: Move to haskell-matlab?
-initHSMatlabEngineEnv :: HasEngine r => [ZIO r MatlabException ()] -> ZIO r MatlabException ()
-initHSMatlabEngineEnv iFuns = do
+class HasCobraDir env => SetCobraDir env where
+  setCobraDir :: env -> Path Abs Dir -> env
+
+  cobraDir :: Lens' env (Path Abs Dir)
+  cobraDir = lens getCobraDir setCobraDir
+
+initCobraToolbox :: (HasEngine r, HasCobraDir r) => ZIO r MatlabException ()
+initCobraToolbox = do
+  initDir <- pwd -- bracket start
   env <- ask
-  let eng = getEngine env
-  initDir <- pwd
+  let cDir = getCobraDir env
+  cd cDir
+  engineEvalProc "initCobraToolbox" []
+  cd initDir -- bracket close
+
+
+-- TODO: bracket on staying in initDir?
+initHSMatlabEngineEnv :: (HasEngine r, HasCobraDir r) =>
+  [ZIO r MatlabException ()] -> ZIO r MatlabException ()
+initHSMatlabEngineEnv iFuns = do
+  initDir <- pwd -- bracket start
   mxleZ . zlift $ putStrLn $ "Starting HS MATLAB initialization in " <> (toFilePath initDir)
   runAll iFuns
-
+  cd initDir -- bracket close

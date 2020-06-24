@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
 module Main where
@@ -20,14 +21,42 @@ import qualified Data.Map.Strict as DM
 import           Path
 import           ZIO.Trans
 
-data Env = Env {mEngine :: Engine}
-  deriving Eq
+
+-- TODO: --- --- --- read these from Dhall --- --- --- ---
+
+userCobraDir :: Path Abs Dir
+userCobraDir = [absdir|/home/bebarker/workspace/cobratoolbox|]
+
+projectDir :: Path Abs Dir
+projectDir = [absdir|/home/bebarker/workspace/DouglasMetabolicModels|]
+
+--This one is OK hardcoded
+analysisSubDir :: Path Rel Dir
+analysisSubDir = [reldir|analysis/semiDynamicSC|]
+
+--This one is OK hardcoded
+logFile :: Path Rel File
+logFile = [relfile|log_prioSims.txt|]
+
+data Env = Env {
+    mCobraDir :: Path Abs Dir
+  , mProjDir :: Path Abs Dir
+  , mAnalysisDir :: Path Abs Dir
+  , mEngine :: Engine
+} deriving Eq
+
 
 instance HasEngine Env where
   getEngine = mEngine
 
 instance SetEngine Env where
   setEngine env eng = env {mEngine = eng}
+
+instance HasCobraDir Env where
+  getCobraDir = mCobraDir
+
+instance SetCobraDir Env where
+  setCobraDir env cDir = env {mCobraDir= cDir}
 
 type AppEnv a = ZIO Env MatlabException a
 
@@ -37,7 +66,12 @@ zslift = (mapZError show) . zlift
 main :: IO ()
 main = do
   eng <- newEngine ""
-  let env = Env eng
+  env <- pure $ Env {
+      mCobraDir = userCobraDir
+    , mProjDir = projectDir
+    , mAnalysisDir = projectDir </> analysisSubDir
+    , mEngine = eng
+    }
   runApp app env
   where
     runApp a r = runZIO a r (putStrLn . show)
@@ -46,7 +80,8 @@ app :: AppEnv ()
 app = do
   env <- ask
   let eng = getEngine env
-  diaryFile logFile
+  let analysisDir = mAnalysisDir env
+  diaryFile $ analysisDir </> logFile
   diaryOn
   pl <- permListMX 5
 
@@ -59,12 +94,14 @@ app = do
   initHSMatlabEngineEnv [initDMM, initCobraToolbox]
   pure ()
 
-logFile :: Path Rel File
-logFile = $(mkRelFile "log_prioSims.txt")
-
 initDMM :: AppEnv ()
 initDMM = do
+  initDir <- pwd -- bracket start
+  env <- ask
+  let pDir = mProjDir env
+  cd pDir
   engineEvalProc "initDMM" []
+  cd initDir -- bracket close
 
 newtype MultiModel = MultiModel { _multiModel :: MStruct }
 makeLenses '' MultiModel
@@ -329,7 +366,7 @@ runSemiDynamicSteadyCom
     setLpFeasTol origFeasTol
     pure schedRes
 
---TODO: use bracket to get/set feastol?
+--TODO: use bracket to get/set feastol in runSemiDynamicSteadyCom?
 --TODO, but need a ZIO bracket based on: https://hackage.haskell.org/package/unexceptionalio-0.5.1/docs/UnexceptionalIO.html#v:bracket
 
 getLpFeasTol :: AppEnv MDouble

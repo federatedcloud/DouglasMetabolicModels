@@ -37,7 +37,7 @@ packages:
 #
 extra-deps:
   - git: https://github.com/CornellCAC/haskell-matlab.git
-    commit: 5cb357ca612014c0c7a9ea3b6a07bda568fb2dab
+    commit: 59f440c91c12585a25c712d54bbcf3c472107f25
   - unexceptionalio-0.5.1
   - unexceptionalio-trans-0.5.1
   - git : https://github.com/bbarker/haskell-zio.git
