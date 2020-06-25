@@ -14,6 +14,6 @@ stdenv.mkDerivation {
   inherit myGurobi;
   inherit hsMatlab;
   name = "stack-matlab-env";
-  buildInputs = [ stack ];
+  buildInputs = [ stack zlib];
   libPath = [];
 }

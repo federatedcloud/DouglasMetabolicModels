@@ -46,9 +46,12 @@ library
     , matlab >=0.2 && <0.3
     , mtl
     , path
+    , time
     , transformers
+    , turtle
     , unexceptionalio >= 0.5.1
     , unexceptionalio-trans
+    , uuid
     , zio >= 0.1.0.0
   default-language: Haskell2010
 
@@ -66,9 +69,12 @@ executable schedulePrioSims
     , lens >= 4.17.1
     , matlab >=0.2 && <0.3
     , path
+    , time
     , transformers
+    , turtle
     , unexceptionalio >= 0.5.1
     , unexceptionalio-trans
+    , uuid
     , zio >= 0.1.0.0
   default-language: Haskell2010
 

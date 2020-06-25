@@ -2,6 +2,8 @@
 {-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
+{-# LANGUAGE LambdaCase         #-}
+
 module Main where
 
 import           Control.Arrow ((>>>))
@@ -9,6 +11,10 @@ import           Control.Lens
 import           Control.Monad (join)
 import           Data.Coerce (coerce)
 import           Data.Maybe (fromMaybe)
+import           Data.Time.Clock
+import           Data.Time.Calendar
+import qualified Data.UUID as UUID
+import qualified Data.UUID.V4 as UUID4
 import           Foreign.Matlab
 import           Foreign.Matlab.ZIOArray
 import           Foreign.Matlab.ZIOEngine
@@ -20,7 +26,22 @@ import           Data.List (intercalate)
 import           Data.Map.Lens
 import qualified Data.Map.Strict as DM
 import           Path
+import           Turtle (decodeString)
+import           Turtle.Prelude (mktree)
 import           ZIO.Trans
+
+
+--TODO: move these two to haskell-matlab or even ZIO; generalize to all string-wrapping errors
+mxNothingAppE :: String -> EIO MatlabException a -> EIO MatlabException a
+mxNothingAppE aps eio = catchError eio (\case
+  MXNothing er -> throwError $ MXNothing $ aps <> " " <> er
+  er -> throwError $ er
+  )
+
+mxNothingAppZ :: String -> ZIO r MatlabException a -> ZIO r MatlabException a
+mxNothingAppZ aps zio = do
+  env <- ask
+  (ezlift . (mxNothingAppE aps) . (flip runReaderT env)  . _unZIO) zio
 
 
 data ModelCoords = ModelCoords { _modelFile :: Path Rel File, _mapVar :: String}
@@ -110,38 +131,6 @@ type AppEnv a = ZIO Env MatlabException a
 zslift :: IO a -> ZIO r String a
 zslift = (mapZError show) . zlift
 
-main :: IO ()
-main = do
-  eng <- newEngine ""
-  env <- pure $ Env {
-      _eCobraDir = userCobraDir
-    , _eProjDir = projectDir
-    , _eAnalysisDir = projectDir </> analysisSubDir
-    , _eEngine = eng
-    , _eModelLoc = analysisModList
-    }
-  runApp app env
-  where
-    runApp a r = runZIO a r (putStrLn . show)
-
-app :: AppEnv ()
-app = do
-  env <- ask
-  let eng = getEngine env
-  let analysisDir = _eAnalysisDir env
-  diaryFile $ analysisDir </> logFile
-  diaryOn
-  pl <- permListMX 5
-
-  runAll $ disp <$> pl
-
-  -- Pure Haskell version:
-  -- let pl = permList 5
-  -- runAll $ (putStrLn . show) <$> pl
-
-  initHSMatlabEngineEnv [initDMM, initCobraToolbox]
-  pure ()
-
 initDMM :: AppEnv ()
 initDMM = do
   initDir <- pwd -- bracket start
@@ -152,7 +141,7 @@ initDMM = do
   cd initDir -- bracket close
 
 getStepLast :: ScheduleResult -> AppEnv StepResult
-getStepLast schedr = do
+getStepLast schedr = mxNothingAppZ "getStepLast" $ do
   lastCC <- schedr ^. scheduleResult & mxArrayGetLast >>= (mCell >>> castMXArray)
   lastCC & mxArrayGetFirst <&> StepResult
 
@@ -167,28 +156,31 @@ stepsToSched steps = do
   saList <&> anyMXArray <&> MCell & fromListIO <&> ScheduleResult
 
 getModel :: StepResult -> AppEnv MultiModel
-getModel stepr = stepr ^. stepResult . mStruct . at "model" & errMsgAt
+getModel stepr = mxNothingAppZ "getModel" $
+  stepr ^. stepResult . mStruct . at "model" & errMsgAt
     & liftEither & mxasZ >>= castMXArray >>= mxArrayGetFirst <&> MultiModel
   where
     errMsgAt :: Maybe a -> Either String a
     errMsgAt = mayToEi "getModel: couldn't find field"
 
 getResult :: StepResult -> AppEnv ScomResult
-getResult stepr = stepr ^. stepResult . mStruct . at "result" & errMsgAt
+getResult stepr = mxNothingAppZ "getResult" $
+  stepr ^. stepResult . mStruct . at "result" & errMsgAt
     & liftEither & mxasZ >>= castMXArray >>= mxArrayGetFirst <&> ScomResult
   where
     errMsgAt :: Maybe a -> Either String a
     errMsgAt = mayToEi "getResult: couldn't find field"
 
 getFlux :: ScomResult -> AppEnv (MXArray MDouble)
-getFlux scres = scres ^. scomResult . mStruct . at "flux" & errMsgAt
+getFlux scres = mxNothingAppZ "getFlux" $
+  scres ^. scomResult . mStruct . at "flux" & errMsgAt
     & liftEither & mxasZ >>= castMXArray
   where
     errMsgAt :: Maybe a -> Either String a
     errMsgAt = mayToEi "getFlux: couldn't find field"
 
 getInfoCom :: MultiModel -> AppEnv InfoCom
-getInfoCom model = do
+getInfoCom model = mxNothingAppZ "getInfoCom" $ do
   infoComAA <- model ^. multiModel . mStruct . at "infoCom" & errMsgAt & liftEither & mxasZ
   infoComSA <- infoComAA & castMXArray
   infoComFirst <- infoComSA & mxArrayGetFirst
@@ -198,7 +190,7 @@ getInfoCom model = do
     errMsgAt = mayToEi "getInfoCom: couldn't find field"
 
 getSpAbbr :: InfoCom -> AppEnv [SpeciesAbbr]
-getSpAbbr icom = do
+getSpAbbr icom = mxNothingAppZ "getSpAbbr" $ do
   saAA <- icom ^. infoCom . mStruct . at "spAbbr" & errMsgAt & liftEither & mxasZ
   saCA :: MXArray MCell <- saAA & castMXArray
   sas :: [String] <- mxCellGetAllListsOfType saCA
@@ -207,23 +199,23 @@ getSpAbbr icom = do
     errMsgAt :: Maybe a -> Either String a
     errMsgAt = mayToEi "getSpAbbr: couldn't find field"
 
-
 mmapToMStruct :: ModelMap -> AppEnv MStruct
-mmapToMStruct m = do
+mmapToMStruct m = mxNothingAppZ "mmapToMStruct" $ do
   let sKeys = m & DM.keys <&> _speciesAbbr
   values <- m & DM.elems <&> (_model >>> createMXScalar) & sequence
   (zip sKeys (anyMXArray <$> values) & DM.fromList) ^. from mStruct & pure
 
 structToMMap :: MStruct -> AppEnv ModelMap
-structToMMap ms = do
+structToMMap ms = mxNothingAppZ "structToMMap" $ do
   let mmapKeyed = ms ^. mStruct & DM.mapKeys SpeciesAbbr
   mmapKeyStructed <- traverse (castMXArray >=> mxArrayGetFirst) mmapKeyed
   pure $ DM.map Model mmapKeyStructed
 
-readModelMap :: ModelCoords -> AppEnv ModelMap
-readModelMap mmLoc = do
+readModelMap :: AppEnv ModelMap
+readModelMap = mxNothingAppZ "readModelMap" $ do
   env <- ask
   let mFilePath = (env ^. eProjDir) </> modelDir </> (env ^. eModelLoc . modelFile)
+  printLn $ "DEBUG: reading models file: " <> (toFilePath mFilePath)
   mFile <- matOpen mFilePath MATRead
   mmapStruct <- matGet mFile (env ^. eModelLoc . mapVar)
     >>= castMXArray >>= mxArrayGetFirst
@@ -304,7 +296,7 @@ semiDynamicSteadyComUpdateBounds
   (model :: MultiModel)
   (modelPrior :: MultiModel)
   (fluxPrior :: MXArray MDouble)
-  (essInfo :: [EssInfo]) = do
+  (essInfo :: [EssInfo]) = mxNothingAppZ "semiDynamicSteadyComUpdateBounds" $ do
   mxEssInfo <- fromListIO $ (coerce essInfo :: [MStruct])
   res <- engineEvalFun "semiDynamicSteadyComUpdateBounds" [
       EvalStruct $ model ^. multiModel
@@ -326,7 +318,7 @@ semiDynamicSteadyComStep
   (currentSched :: [SpeciesAbbr])
   (optsOverride :: SteadyComOpts)
   (essentialRxns :: [EssInfo])
-  (varargin :: VarArgIn) = do
+  (varargin :: VarArgIn) = mxNothingAppZ "semiDynamicSteadyComStep" $ do
   mxEssInfo <- fromListIO $ (coerce essentialRxns :: [MStruct])
   mxCurrentSched <- mxSchedule currentSched
   let mxVarargin = mxVarArgs varargin
@@ -346,7 +338,7 @@ mxSchedule :: [SpeciesAbbr] -> AppEnv (MXArray MCell)
 mxSchedule sched = cellFromListsIO $ (coerce sched :: [String])
 
 checkEssentiality :: MultiModel -> [String] -> AppEnv [EssInfo]
-checkEssentiality model rxns = do
+checkEssentiality model rxns = mxNothingAppZ "checkEssentiality" $ do
   rxnsCA <- cellFromListsIO rxns
   res <- engineEvalFun "checkEssentiality" [
       EvalStruct $ model ^. multiModel
@@ -357,7 +349,7 @@ checkEssentiality model rxns = do
   pure $ EssInfo <$> listOfStructs
 
 makeMultiModel :: [SpeciesAbbr] -> ModelMap -> MediaType -> AppEnv (MultiModel, [String])
-makeMultiModel modelKeys modMap mediaType = do
+makeMultiModel modelKeys modMap mediaType = mxNothingAppZ "makeMultiModel" $ do
   species <- cellFromListsIO (coerce modelKeys :: [String])
   modMapStruct <- mmapToMStruct modMap
   resList <- engineEvalFun "makeMultiModel" [
@@ -365,10 +357,11 @@ makeMultiModel modelKeys modMap mediaType = do
     , EvalStruct modMapStruct
     , EvalString $ show $ mediaType] 2
   res <- headZ "No results from makeMultiModel" resList
-  multiModelSA <- castMXArray res
+  multiModelSA <- mxNothingAppZ "multiModelSA" $ castMXArray res
   multiModelStruct <- mxArrayGetFirst multiModelSA
-  rxns <- resList ^? ix 1 & errMsgIx1 & liftEither & mxasZ
-    >>= castMXArray >>= mxCellGetAllListsOfType
+  rxns <- mxNothingAppZ "retrieving rxns" $
+    resList ^? ix 1 & errMsgIx1 & liftEither & mxasZ
+      >>= castMXArray >>= mxCellGetAllListsOfType
   pure $ (MultiModel multiModelStruct, rxns)
   where
     errMsgIx1 :: Maybe a -> Either String a
@@ -381,8 +374,10 @@ commString :: MultiModel -> AppEnv String
 commString mm = do
   infoCom <- getInfoCom mm
   spAbbrs <- getSpAbbr infoCom
-  pure $ intercalate "_" $ coerce spAbbrs
+  pure $ spAbbToCommName spAbbrs
 
+spAbbToCommName :: [SpeciesAbbr] -> String
+spAbbToCommName sps = intercalate "_" $ coerce sps
 
 runSemiDynamicSteadyCom ::
      ModelMap  -- ^ List of multi-species models.
@@ -410,7 +405,7 @@ runSemiDynamicSteadyCom
 --TODO, but need a ZIO bracket based on: https://hackage.haskell.org/package/unexceptionalio-0.5.1/docs/UnexceptionalIO.html#v:bracket
 
 getLpFeasTol :: AppEnv MDouble
-getLpFeasTol = do
+getLpFeasTol = mxNothingAppZ "getLpFeasTol" $ do
   res <- engineEvalFun "getCobraSolverParams" [
       EvalString "LP"
     , EvalString "feasTol"
@@ -426,17 +421,69 @@ setLpFeasTol ft = do
     , EvalArray ftMX
     ]
 
--- makeSpAbbr :: Model -> AppEnv SpeciesAbbr
--- makeSpAbbr = _
+saveSchedRes :: Path b Dir -> [SpeciesAbbr] -> ScheduleResult -> AppEnv ()
+saveSchedRes resDir schedule sr = do
+  let cName = spAbbToCommName schedule
+  let fileName = cName <> ".mat"
+  fileRel <- mxaeZ $ zlift $ parseRelFile fileName
+  matSave (resDir </> fileRel) [(cName, sr ^. scheduleResult)]
 
--- readModelMap :: ModelListCoords -> AppEnv ModelMap
--- readModelMap mlLoc = do
---   env <- ask
---   let mFilePath = (env ^. eProjDir) </> modelDir </> (env ^. eModelListLoc . modelFile)
---   mFile <- matOpen mFilePath MATRead
---   modSAs <- matGet mFile (env ^. eModelListLoc . listVar)
---     >>= castMXArray >>= mxCellGetAllOfType
---   models <- traverse mxArrayGetFirst modSAs <&> (fmap Model)
---   spAbbrs <- traverse makeSpAbbr models
---   pure $ DM.fromList $ zip spAbbrs models
+-- | Creates a results folder under the analysis folder and returns its Path.
+makeResultFolder :: AppEnv (Path Abs Dir)
+makeResultFolder = do
+  env <- ask
+  date <- mxaeZ $ zlift $ getCurrentTime
+  uuid <- mxaeZ $ zlift $ UUID4.nextRandom
+  let dateTup = date & utctDay & toGregorian
+  dateStr <- pure $ intercalate "_" [
+      dateTup ^. _1 & show
+    , dateTup ^. _2 & show
+    , dateTup ^. _3 & show
+    ]
+  let folderStr = dateStr <> "__" <> (UUID.toString uuid)
+  resFolder <- mxaeZ $ zlift $ parseRelDir folderStr
+  let resPath = (env ^. eAnalysisDir) </> resFolder
+  mkdirp resPath
+  pure resPath
 
+-- A util function
+mkdirp :: Path b Dir -> AppEnv ()
+mkdirp p = mxaeZ $ zlift $ mktree $ decodeString $ toFilePath p
+
+
+main :: IO ()
+main = do
+  eng <- newEngine ""
+  env <- pure $ Env {
+      _eCobraDir = userCobraDir
+    , _eProjDir = projectDir
+    , _eAnalysisDir = projectDir </> analysisSubDir
+    , _eEngine = eng
+    , _eModelLoc = analysisModList
+    }
+  runApp app env
+  where
+    runApp a r = runZIO a r (putStrLn . show)
+
+app :: AppEnv ()
+app = do
+  env <- ask
+  let eng = getEngine env
+  let analysisDir = _eAnalysisDir env
+  resFolder <- makeResultFolder
+  diaryFile $ resFolder </> logFile
+  diaryOn
+  pl <- permListMX 5
+
+  runAll $ disp <$> pl
+
+  -- Pure Haskell version:
+  -- let pl = permList 5
+  -- runAll $ (putStrLn . show) <$> pl
+
+  initHSMatlabEngineEnv [initDMM, initCobraToolbox]
+
+  all5map <- readModelMap
+  let schedule = all5map & DM.keys
+  schedRes <- runSemiDynamicSteadyCom all5map schedule Nothing
+  saveSchedRes resFolder schedule schedRes
