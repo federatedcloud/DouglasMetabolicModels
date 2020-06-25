@@ -3,8 +3,7 @@ function [multiModel, rxns] = makeMultiModel(modelKeys, modelMap, mediaType)
 %   modelKeys is a cell array of strings that index into modelMap;
 %             these should be the model names.
 %
-%   modelMap is a containers.Map data structer, with key names as
-%            indexes and models as values.
+%   modelMap is a struct with field names as indices and models as values.
 %   mediaType: 'rich' (no action after createMultipleSpeciesModel is called),
 %                     highly unconstrained
 %              'minimal-merge': iteratively reapply constraints from constituent
@@ -29,7 +28,7 @@ function [multiModel, rxns] = makeMultiModel(modelKeys, modelMap, mediaType)
   );
   assert(length(intersect({mediaType}, mediaTypeOptions)) == 1, mediaTypeMsg);
 
-  modelsToSim = cellFlatMap(@(k) modelMap(k), modelKeys);
+  modelsToSim = cellFlatMap(@(k) getfield(modelMap, k), modelKeys);
 
           % Adust so that SteadyCom/createMultiSpecies is happy %
   try

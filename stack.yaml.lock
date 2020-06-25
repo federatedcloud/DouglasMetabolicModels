@@ -6,18 +6,18 @@
 packages:
 - completed:
     cabal-file:
-      size: 4690
-      sha256: d5852f78576ef5f9f4b0451ca6d06542d94d6c2b296c30b3aa6acf41f128092f
+      size: 4720
+      sha256: dd56004136c2622ed8d25f59168795cab19cbc90f291285d34212c6e1d2d3623
     name: matlab
     version: 0.2.0.0
     git: https://github.com/CornellCAC/haskell-matlab.git
     pantry-tree:
-      size: 3538
-      sha256: 8e24827134dbda2f18e84c253d84293d6525ae3e4a1433e6939e32f6a37f1b83
-    commit: 59f440c91c12585a25c712d54bbcf3c472107f25
+      size: 3603
+      sha256: c97d2ce433389a2a988b48f0816dc5dcd08cd5923b0aec0aee8167be4eaa2568
+    commit: a698728a0d3297f37eaa8f35b3e92329b5558b82
   original:
     git: https://github.com/CornellCAC/haskell-matlab.git
-    commit: 59f440c91c12585a25c712d54bbcf3c472107f25
+    commit: a698728a0d3297f37eaa8f35b3e92329b5558b82
 - completed:
     hackage: unexceptionalio-0.5.1@sha256:dfa3da738047ea55825be916559083fe3f0460ec699b3b10b7337edece7f43b3,1721
     pantry-tree:

@@ -13,6 +13,7 @@ import           Foreign.Matlab
 import           Foreign.Matlab.ZIOArray
 import           Foreign.Matlab.ZIOEngine
 import           Foreign.Matlab.ZIOEngine.Wrappers
+import           Foreign.Matlab.ZIOMAT
 import           Foreign.Matlab.ZIOTypes
 import           COBRA
 import           Data.List (intercalate)
@@ -22,7 +23,38 @@ import           Path
 import           ZIO.Trans
 
 
--- TODO: --- --- --- read these from Dhall --- --- --- ---
+data ModelCoords = ModelCoords { _modelFile :: Path Rel File, _mapVar :: String}
+  deriving Eq
+makeLenses ''ModelCoords
+
+newtype Model = Model { _model :: MStruct }
+makeLenses ''Model
+
+newtype MultiModel = MultiModel { _multiModel :: MStruct }
+makeLenses ''MultiModel
+
+newtype InfoCom = InfoCom { _infoCom :: MStruct }
+makeLenses ''InfoCom
+
+newtype SpeciesAbbr = SpeciesAbbr { _speciesAbbr :: String }
+  deriving (Eq, Ord, Show)
+makeLenses ''SpeciesAbbr
+
+newtype StepResult = StepResult { _stepResult :: MStruct }
+makeLenses ''StepResult
+
+newtype ScomResult = ScomResult { _scomResult :: MStruct }
+makeLenses ''ScomResult
+
+newtype ScheduleResult = ScheduleResult { _scheduleResult :: MXArray MCell }
+makeLenses ''ScheduleResult
+
+newtype SteadyComOpts = SteadyComOpts { _steadyComOpts :: MStruct }
+makeLenses ''SteadyComOpts
+
+type ModelMap = DM.Map SpeciesAbbr Model
+
+-- TODO: *** *** *** read these from Dhall *** *** *** ***
 
 userCobraDir :: Path Abs Dir
 userCobraDir = [absdir|/home/bebarker/workspace/cobratoolbox|]
@@ -30,33 +62,48 @@ userCobraDir = [absdir|/home/bebarker/workspace/cobratoolbox|]
 projectDir :: Path Abs Dir
 projectDir = [absdir|/home/bebarker/workspace/DouglasMetabolicModels|]
 
---This one is OK hardcoded
+analysisModList :: ModelCoords
+analysisModList = ModelCoords {
+    _modelFile = [relfile|5.models_080719/all_5.mat|]
+  , _mapVar = "allModels"
+  }
+
+
+-- TODO End: ^^^ ^^^ read these from Dhall ^^^ ^^^ ^^^ ^^^
+
+
+-- This one is OK hardcoded
 analysisSubDir :: Path Rel Dir
 analysisSubDir = [reldir|analysis/semiDynamicSC|]
 
---This one is OK hardcoded
+-- This one is OK hardcoded
+modelDir :: Path Rel Dir
+modelDir = [reldir|models|]
+
+-- This one is OK hardcoded
 logFile :: Path Rel File
 logFile = [relfile|log_prioSims.txt|]
 
 data Env = Env {
-    mCobraDir :: Path Abs Dir
-  , mProjDir :: Path Abs Dir
-  , mAnalysisDir :: Path Abs Dir
-  , mEngine :: Engine
+    _eCobraDir :: Path Abs Dir
+  , _eProjDir :: Path Abs Dir
+  , _eAnalysisDir :: Path Abs Dir
+  , _eEngine :: Engine
+  , _eModelLoc :: ModelCoords
 } deriving Eq
-
+makeLenses ''Env
 
 instance HasEngine Env where
-  getEngine = mEngine
+  getEngine = _eEngine
 
 instance SetEngine Env where
-  setEngine env eng = env {mEngine = eng}
+  setEngine env eng = env {_eEngine = eng}
 
 instance HasCobraDir Env where
-  getCobraDir = mCobraDir
+  getCobraDir = _eCobraDir
 
 instance SetCobraDir Env where
-  setCobraDir env cDir = env {mCobraDir= cDir}
+  setCobraDir env cDir = env {_eCobraDir= cDir}
 
 type AppEnv a = ZIO Env MatlabException a
 
@@ -67,10 +114,11 @@ main :: IO ()
 main = do
   eng <- newEngine ""
   env <- pure $ Env {
-      mCobraDir = userCobraDir
-    , mProjDir = projectDir
-    , mAnalysisDir = projectDir </> analysisSubDir
-    , mEngine = eng
+      _eCobraDir = userCobraDir
+    , _eProjDir = projectDir
+    , _eAnalysisDir = projectDir </> analysisSubDir
+    , _eEngine = eng
+    , _eModelLoc = analysisModList
     }
   runApp app env
   where
@@ -80,7 +128,7 @@ app :: AppEnv ()
 app = do
   env <- ask
   let eng = getEngine env
-  let analysisDir = mAnalysisDir env
+  let analysisDir = _eAnalysisDir env
   diaryFile $ analysisDir </> logFile
   diaryOn
   pl <- permListMX 5
@@ -98,33 +146,10 @@ initDMM :: AppEnv ()
 initDMM = do
   initDir <- pwd -- bracket start
   env <- ask
-  let pDir = mProjDir env
+  let pDir = _eProjDir env
   cd pDir
   engineEvalProc "initDMM" []
   cd initDir -- bracket close
-
-newtype MultiModel = MultiModel { _multiModel :: MStruct }
-makeLenses '' MultiModel
-
-newtype InfoCom = InfoCom { _infoCom :: MStruct }
-makeLenses '' InfoCom
-
-newtype SpeciesAbbr = SpeciesAbbr { _speciesAbbr :: String }
-makeLenses '' SpeciesAbbr
-
-newtype StepResult = StepResult { _stepResult :: MStruct }
-makeLenses '' StepResult
-
-newtype ScomResult = ScomResult { _scomResult :: MStruct }
-makeLenses '' ScomResult
-
-newtype ScheduleResult = ScheduleResult { _scheduleResult :: MXArray MCell }
-makeLenses '' ScheduleResult
-
-newtype SteadyComOpts = SteadyComOpts { _steadyComOpts :: MStruct }
-makeLenses '' SteadyComOpts
-
-type ModelMap = DM.Map SpeciesAbbr MultiModel
 
 getStepLast :: ScheduleResult -> AppEnv StepResult
 getStepLast schedr = do
@@ -186,12 +211,27 @@ getSpAbbr icom = do
 mmapToMStruct :: ModelMap -> AppEnv MStruct
 mmapToMStruct m = do
   let sKeys = m & DM.keys <&> _speciesAbbr
-  values <- m & DM.elems <&> (_multiModel >>> createMXScalar) & sequence
+  values <- m & DM.elems <&> (_model >>> createMXScalar) & sequence
   (zip sKeys (anyMXArray <$> values) & DM.fromList) ^. from mStruct & pure
+
+structToMMap :: MStruct -> AppEnv ModelMap
+structToMMap ms = do
+  let mmapKeyed = ms ^. mStruct & DM.mapKeys SpeciesAbbr
+  mmapKeyStructed <- traverse (castMXArray >=> mxArrayGetFirst) mmapKeyed
+  pure $ DM.map Model mmapKeyStructed
+
+readModelMap :: ModelCoords -> AppEnv ModelMap
+readModelMap mmLoc = do
+  env <- ask
+  let mFilePath = (env ^. eProjDir) </> modelDir </> (env ^. eModelLoc . modelFile)
+  mFile <- matOpen mFilePath MATRead
+  mmapStruct <- matGet mFile (env ^. eModelLoc . mapVar)
+    >>= castMXArray >>= mxArrayGetFirst
+  structToMMap mmapStruct
 
 -- | Wraps a struct containing essentiality information
 newtype EssInfo = EssInfo { _essInfo :: MStruct }
-makeLenses '' EssInfo
+makeLenses ''EssInfo
 
 data MediaType =
     Minimal
@@ -380,8 +420,23 @@ getLpFeasTol = do
 setLpFeasTol :: MDouble -> AppEnv ()
 setLpFeasTol ft = do
   ftMX <- createMXScalar ft
-  engineEvalProc "changeCobraSolverParams" [
+  engineEvalProc "chang_eCobraSolverParams" [
       EvalString "LP"
     , EvalString "feasTol"
     , EvalArray ftMX
     ]
+
+-- makeSpAbbr :: Model -> AppEnv SpeciesAbbr
+-- makeSpAbbr = _
+
+-- readModelMap :: ModelListCoords -> AppEnv ModelMap
+-- readModelMap mlLoc = do
+--   env <- ask
+--   let mFilePath = (env ^. eProjDir) </> modelDir </> (env ^. eModelListLoc . modelFile)
+--   mFile <- matOpen mFilePath MATRead
+--   modSAs <- matGet mFile (env ^. eModelListLoc . listVar)
+--     >>= castMXArray >>= mxCellGetAllOfType
+--   models <- traverse mxArrayGetFirst modSAs <&> (fmap Model)
+--   spAbbrs <- traverse makeSpAbbr models
+--   pure $ DM.fromList $ zip spAbbrs models
+
