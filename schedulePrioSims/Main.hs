@@ -263,16 +263,21 @@ semiDynamicSteadyCom
 -- Inductive case
 semiDynamicSteadyCom
   (modelMap :: ModelMap)
-  (currentSched:schedRemain :: [SpeciesAbbr])
+  sched@(currentSched:schedRemain :: [SpeciesAbbr])
   (schedRes :: ScheduleResult)
   (optsOverride :: Maybe SteadyComOpts)
   (varargin :: VarArgIn) = do
+    printLn "DEBUG: semiDynamicSteadyCom entered (inductive case)"
+    printLn $ "DEBUG: semiDynamicSteadyCom schedule is " <> (spAbbToCommName sched)
     lastStepMay <- schedRes & getStepLast & mxToMaybeZ
+    printLn $ "DEBUG: semiDynamicSteadyCom: retrieved lastStepMay for  "
+      <> (spAbbToCommName sched)
     lastOrgKeys <- maybe (pure []) (getModel >=> getInfoCom >=> getSpAbbr) lastStepMay
     let currentOrgKeys = currentSched:lastOrgKeys
     (modelCom, mediaRxns) <- makeMultiModel currentOrgKeys modelMap MinimalPlus
     modelPrior <- maybe (pure modelCom) getModel lastStepMay
     commName <- commString modelCom
+    printLn $ "DEBUG: generated commName: " <> commName
     essentialRxns <- checkEssentiality modelCom mediaRxns
     nSpecies <- modelCom & (getInfoCom >=> getSpAbbr) <&> length
     modelCom' <-
@@ -394,7 +399,9 @@ runSemiDynamicSteadyCom
   (optsOverride :: Maybe SteadyComOpts) = do
     origFeasTol <- getLpFeasTol
     setLpFeasTol 1e-8
+    printLn "DEBUG: first call to setLpFeasTol completed"
     emptySchedRes <- ScheduleResult <$> fromListIO []
+    printLn "DEBUG: created emptySchedRes"
     schedRes <- semiDynamicSteadyCom
       modelMap
       schedule
@@ -488,5 +495,6 @@ app = do
 
   all5map <- readModelMap
   let schedule = all5map & DM.keys
+  printLn $ "DEBUG: schedule is " <> (spAbbToCommName schedule)
   schedRes <- runSemiDynamicSteadyCom all5map schedule Nothing
   saveSchedRes resFolder schedule schedRes
