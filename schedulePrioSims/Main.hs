@@ -86,7 +86,7 @@ projectDir = [absdir|/home/bebarker/workspace/DouglasMetabolicModels|]
 analysisModList :: ModelCoords
 analysisModList = ModelCoords {
     _modelFile = [relfile|5.models_080719/all_5.mat|]
-  , _mapVar = "allModels"
+  , _mapVar = "allModelsMap"
   }
 
 
@@ -217,6 +217,9 @@ readModelMap = mxNothingAppZ "readModelMap" $ do
   let mFilePath = (env ^. eProjDir) </> modelDir </> (env ^. eModelLoc . modelFile)
   printLn $ "DEBUG: reading models file: " <> (toFilePath mFilePath)
   mFile <- matOpen mFilePath MATRead
+  mmapAny <- matGet mFile (env ^. eModelLoc . mapVar)   -- DEBUG
+  mmapAnyClass <- mxArrayClass mmapAny                  -- DEBUG
+  printLn $ "DEBUG: class is " <> (show mmapAnyClass)
   mmapStruct <- matGet mFile (env ^. eModelLoc . mapVar)
     >>= castMXArray >>= mxArrayGetFirst
   structToMMap mmapStruct
@@ -415,7 +418,7 @@ getLpFeasTol = mxNothingAppZ "getLpFeasTol" $ do
 setLpFeasTol :: MDouble -> AppEnv ()
 setLpFeasTol ft = do
   ftMX <- createMXScalar ft
-  engineEvalProc "chang_eCobraSolverParams" [
+  engineEvalProc "changeCobraSolverParams" [
       EvalString "LP"
     , EvalString "feasTol"
     , EvalArray ftMX
