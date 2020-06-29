@@ -142,8 +142,15 @@ initDMM = do
 
 getStepLast :: ScheduleResult -> AppEnv StepResult
 getStepLast schedr = mxNothingAppZ "getStepLast" $ do
-  lastCC <- schedr ^. scheduleResult & mxArrayGetLast >>= (mCell >>> castMXArray)
-  lastCC & mxArrayGetFirst <&> StepResult
+  printLn "DEBUG: entering getStepLast"
+  -- lastCC <- schedr ^. scheduleResult & mxArrayGetLast >>= (mCell >>> castMXArray)
+  -- TODO: ^break above line up to diagnose issue
+  lastCell :: MCell <- schedr ^. scheduleResult & mxArrayGetLast
+  printLn "DEBUG: performed mxArrayGetLast in getStepLast"
+  let lastCellAA = mCell lastCell
+  lastCellStructArray <- castMXArray lastCellAA
+  printLn $ "DEBUG: isMNull lastCellStructArray?:" <> (show $ isMNull lastCellStructArray)
+  lastCellStructArray & mxArrayGetFirst <&> StepResult
 
 getSteps :: ScheduleResult -> AppEnv [StepResult]
 getSteps schedr = do
