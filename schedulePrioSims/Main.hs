@@ -294,9 +294,13 @@ semiDynamicSteadyCom
         newLB <- semiDynamicSteadyComUpdateBounds modelCom modelPrior fluxPrior essentialRxns
         modelCom & multiModel . mStruct . at "lb" ?~ (anyMXArray newLB) & pure
       else pure modelCom
+    printLn $ "DEBUG: created modelCom' "
     scOpts <- pure $ fromMaybe (SteadyComOpts mStructEmpty) optsOverride
+    printLn $ "DEBUG: created scOpts"
     outStep <- semiDynamicSteadyComStep modelCom' [currentSched] scOpts essentialRxns varargin
+    printLn $ "DEBUG: created outStep"
     priorSteps <- getSteps schedRes
+    printLn $ "DEBUG: retrieved priorSteps"
     stepsToSched $ outStep : priorSteps
 
 -- | Helper function to determine how bounds are changed based on
@@ -334,8 +338,11 @@ semiDynamicSteadyComStep
   (optsOverride :: SteadyComOpts)
   (essentialRxns :: [EssInfo])
   (varargin :: VarArgIn) = mxNothingAppZ "semiDynamicSteadyComStep" $ do
+  printLn "DEBUG: entered semiDynamicSteadyComStep"
   mxEssInfo <- fromListIO $ (coerce essentialRxns :: [MStruct])
+  printLn "DEBUG: retrieved mxEssInfo"
   mxCurrentSched <- mxSchedule currentSched
+  printLn "DEBUG: retrieved mxCurrentSched"
   let mxVarargin = mxVarArgs varargin
   allArgs <- pure $ [
       EvalStruct $ modelCom ^. multiModel
@@ -343,9 +350,11 @@ semiDynamicSteadyComStep
     , EvalStruct $ optsOverride ^. steadyComOpts
     , EvalArray $ anyMXArray mxEssInfo
     ] ++ mxVarargin
+  printLn "DEBUG: constructed allArgs"
   res <- engineEvalFun "semiDynamicSteadyComStep" allArgs 1
     >>= headZ "No results from semiDynamicSteadyComStep"
   resArr <- castMXArray res
+  printLn "DEBUG: obtained resArr"
   resStruct <- mxArrayGetFirst resArr
   pure $ StepResult $ resStruct
 
