@@ -1,8 +1,8 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE BlockArguments      #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
-
-{-# LANGUAGE LambdaCase         #-}
 
 module COBRA.PriorityEffects where
 
@@ -10,6 +10,7 @@ import           Control.Arrow ((>>>))
 import           Control.Lens
 import           Control.Monad (join)
 import           Data.Coerce (coerce)
+import Data.List (permutations)
 import           Data.Maybe (fromMaybe)
 import           Data.Time.Clock
 import           Data.Time.Calendar
@@ -432,12 +433,17 @@ setLpFeasTol ft = do
     , EvalArray ftMX
     ]
 
-saveSchedRes :: Path b Dir -> [SpeciesAbbr] -> ScheduleResult -> AppEnv ()
-saveSchedRes resDir schedule sr = do
-  let cName = spAbbToCommName schedule
+saveSchedRes :: Path b Dir -> [SpeciesAbbr] -> [ScheduleResult] -> AppEnv ()
+saveSchedRes resDir orgs srs = do
+  let cName = spAbbToCommName orgs
   let fileName = cName <> ".mat"
   fileRel <- mxaeZ $ zlift $ parseRelFile fileName
-  matSave (resDir </> fileRel) [(cName, sr ^. scheduleResult)]
+  namesAndRes <- forM srs \sr -> do
+    lastStepMay <- sr & getStepLast & mxToMaybeZ
+    lastOrgKeys <- maybe (pure []) (getModel >=> getInfoCom >=> getSpAbbr) lastStepMay
+    let stepName = spAbbToCommName lastOrgKeys
+    pure $ (stepName, sr ^. scheduleResult)
+  matSave (resDir </> fileRel) namesAndRes
 
 -- | Creates a results folder under the analysis folder and returns its Path.
 makeResultFolder :: AppEnv (Path Abs Dir)
@@ -469,18 +475,13 @@ app = do
   resFolder <- makeResultFolder
   diaryFile $ resFolder </> logFile
   diaryOn
-  pl <- permListMX 5
-
-  runAll $ disp <$> pl
-
-  -- Pure Haskell version:
-  -- let pl = permList 5
-  -- runAll $ (putStrLn . show) <$> pl
 
   initHSMatlabEngineEnv [initDMM, initCobraToolbox]
 
   all5map <- readModelMap
-  let schedule = all5map & DM.keys
-  printLn $ "DEBUG: top-level schedule is " <> (spAbbToCommName schedule)
-  schedRes <- runSemiDynamicSteadyCom all5map schedule Nothing
-  saveSchedRes resFolder schedule schedRes
+  -- let orgs = all5map & DM.keys
+  let orgs = coerce ["AT", "LB", "LP"]
+  let allScheds = permutations orgs
+  printLn $ "DEBUG: organism set is " <> (spAbbToCommName orgs)
+  allSchedRes <- forM allScheds $ \sched -> runSemiDynamicSteadyCom all5map sched Nothing
+  saveSchedRes resFolder orgs allSchedRes
