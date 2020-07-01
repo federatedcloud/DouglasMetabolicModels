@@ -26,7 +26,6 @@ utraverse_ :: (Foldable t, Applicative f) => (a -> f ()) -> t a -> f ()
 {-# INLINE utraverse_ #-}
 utraverse_ = traverse_
 
-
 mayToEi :: e -> Maybe a -> Either e a
 mayToEi err = maybe (Left err) Right
 

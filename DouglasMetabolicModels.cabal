@@ -29,6 +29,7 @@ library
   exposed-modules:
       COBRA
       COBRA.Analysis
+      COBRA.PriorityEffects
       COBRA.MATLAB
       COBRA.MATLAB.Analysis
       COBRA.MATLAB.Engine.Analysis
@@ -42,6 +43,7 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , containers >= 0.6.0.1
     , lens >= 4.17.1
     , matlab >=0.2 && <0.3
     , mtl
@@ -65,7 +67,6 @@ executable schedulePrioSims
   build-depends:
       DouglasMetabolicModels
     , base >=4.7 && <5
-    , containers >= 0.6.0.1
     , lens >= 4.17.1
     , matlab >=0.2 && <0.3
     , path
