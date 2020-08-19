@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments      #-}
+{-# LANGUAGE ExplicitForAll      #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -6,6 +7,7 @@
 
 module COBRA.PriorityEffects where
 
+import           Prelude hiding (writeFile)
 import           Control.Arrow ((>>>))
 import           Control.Lens
 import           Control.Monad (join)
@@ -273,7 +275,7 @@ semiDynamicSteadyCom
       <> (spAbbToCommName sched)
     lastOrgKeys <- maybe (pure []) (getModel >=> getInfoCom >=> getSpAbbr) lastStepMay
     let currentOrgKeys = currentSched:lastOrgKeys
-    (modelCom, mediaRxns) <- makeMultiModel currentOrgKeys modelMap MinimalPlus
+    (modelCom, mediaRxns) <- makeMultiModel currentOrgKeys modelMap MinimalPlus -- TODO: remove media hardcoding
     modelPrior <- maybe (pure modelCom) getModel lastStepMay
     commName <- commString modelCom
     essentialRxns <- checkEssentiality modelCom mediaRxns
@@ -485,3 +487,44 @@ app = do
   printLn $ "DEBUG: organism set is " <> (spAbbToCommName orgs)
   allSchedRes <- forM allScheds $ \sched -> runSemiDynamicSteadyCom all5map sched Nothing
   saveSchedRes resFolder orgs allSchedRes
+
+
+-- TODO: Extract this to a very simple library?
+
+type CsvMat = DM.Map (Integer, Integer) String
+
+data CsvMatConf = CsvMatConf {
+  delim :: String
+, emptyCell :: String
+}
+
+class HasCsvMatConf r where
+  csvMatConf :: r -> CsvMatConf
+defCsvMatConf :: CsvMatConf
+defCsvMatConf = CsvMatConf {
+  delim = ","
+, emptyCell = ""
+}
+
+writeCsv :: forall b r. HasCsvMatConf r
+  => CsvMat -> Path b File -> ZIO r SomeNonPseudoException ()
+writeCsv cmat fPath = go minRow indices
+  where
+    minFold :: Foldable t => t Integer -> Integer
+    minFold = foldr min 0
+    maxFold :: Foldable t => t Integer -> Integer
+    maxFold = foldr max 0
+    minRow = cmat & DM.keys <&> fst & minFold
+    maxRow = cmat & DM.keys <&> fst & maxFold
+    minCol = cmat & DM.keys <&> snd & minFold
+    maxCol = cmat & DM.keys <&> snd & maxFold
+    indices = [ (x,y) | x <- [minRow..maxRow], y <- [minCol..maxCol] ]
+    go :: Integer -> [(Integer, Integer)] -> ZIO r SomeNonPseudoException ()
+    go _ [] = pure ()
+    go lastRow (ix:ixs) = do
+      cmConf <- ask <&> csvMatConf
+      let (rowIxs, restIxs) = span (\i -> fst i > lastRow) (ix:ixs)
+      let entryStrs = (\i -> DM.findWithDefault (emptyCell cmConf) i cmat) <$> rowIxs
+      let row = intercalate (delim cmConf) entryStrs
+      writeFile fPath (row <> "\n")
+      go (fst ix) restIxs
