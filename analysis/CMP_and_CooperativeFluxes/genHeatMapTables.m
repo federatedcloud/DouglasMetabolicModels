@@ -71,7 +71,6 @@ function tables = genHeatMapTables(analysis)
       excRxnIds = cellFlatMap(@(r) cellHead(multiModel.rxns(r)), num2cell(rxnIxsMM));
     end
 
-    % Note: currently most likely unused, consider removal
     function commName = commPart(orgCommKey)
       splitKey = split(orgCommKey, ":");
       commName = splitKey{2};

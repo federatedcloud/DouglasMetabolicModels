@@ -1,5 +1,6 @@
 module COBRA.Syntax where
 
+import qualified COBRA.ZIOUtil as Z
 import           Data.Foldable (for_, traverse_)
 import           Foreign.Matlab.ZIOTypes
 import           UnexceptionalIO (SomeNonPseudoException)
@@ -35,4 +36,4 @@ mapLast f (x:xs) = mapLast f xs
 mapLast _ [] = Nothing
 
 printLn :: String -> ZIO r MatlabException ()
-printLn x = mxaeZ $ zlift $ putStrLn x
+printLn x = mxaeZ $ Z.putStrLn x

@@ -13,11 +13,11 @@ packages:
     git: https://github.com/CornellCAC/haskell-matlab.git
     pantry-tree:
       size: 3721
-      sha256: 23a7fd6489312ed81c1f2f3a5380384241d1d52688810bbc98fc0e9462408111
-    commit: c27e20d97a938d0902d6e0df9a4db24cba623af3
+      sha256: bc16b6703dd6fefb799e2a7459d844525715546b86cc46c42014ec9d375a09c9
+    commit: 70f51dfd5dd137a78447b2cc645941c291e63ef4
   original:
     git: https://github.com/CornellCAC/haskell-matlab.git
-    commit: c27e20d97a938d0902d6e0df9a4db24cba623af3
+    commit: 70f51dfd5dd137a78447b2cc645941c291e63ef4
 - completed:
     hackage: unexceptionalio-0.5.1@sha256:dfa3da738047ea55825be916559083fe3f0460ec699b3b10b7337edece7f43b3,1721
     pantry-tree:

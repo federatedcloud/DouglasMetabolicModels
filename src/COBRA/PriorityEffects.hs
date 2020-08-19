@@ -479,6 +479,10 @@ app = do
   diaryOn
 
   initHSMatlabEngineEnv [initDMM, initCobraToolbox]
+  
+  -- FIXME: need to properly handle objects in haskell-matlab
+  -- rxGroupTest <- readRxnGroups Transport
+  -- printLn $ show rxGroupTest
 
   all5map <- readModelMap
   -- let orgs = all5map & DM.keys
@@ -487,6 +491,23 @@ app = do
   printLn $ "DEBUG: organism set is " <> (spAbbToCommName orgs)
   allSchedRes <- forM allScheds $ \sched -> runSemiDynamicSteadyCom all5map sched Nothing
   saveSchedRes resFolder orgs allSchedRes
+
+
+--- HeatMap Table
+
+readRxnGroups :: ReactionType -> AppEnv (DM.Map String [String])
+readRxnGroups rxnType = do
+  resMMap :: MXMap <- engineEvalFun mxRgFun [] 1
+    >>= headZ "No results from readTrRxnGroup" <&> MXMap
+  rxnGrpMapRaw <- mmapToHmap resMMap
+  traverse mxCellGetAllListsOfType rxnGrpMapRaw
+  where
+    mxRgFun :: String
+    mxRgFun = case rxnType of
+      Exchange -> "readExRxnGroups"
+      Transport -> "readTrRxnGroups"
+
+-- genHMTable :: rxnGroups, isTrans
 
 
 -- TODO: Extract this to a very simple library?
