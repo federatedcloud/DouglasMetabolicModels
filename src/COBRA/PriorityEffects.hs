@@ -11,7 +11,9 @@ import           Prelude hiding (writeFile)
 import           Control.Arrow ((>>>))
 import           Control.Lens
 import           Control.Monad (join)
+import           Data.Bifunctor
 import           Data.Coerce (coerce)
+import           Data.Foldable
 import Data.List (permutations)
 import           Data.Maybe (fromMaybe)
 import           Data.Time.Clock
@@ -77,6 +79,10 @@ newtype SteadyComOpts = SteadyComOpts { _steadyComOpts :: MStruct }
 makeLenses ''SteadyComOpts
 
 type ModelMap = DM.Map SpeciesAbbr Model
+
+type RxnFluxMap = DM.Map String MDouble
+type SchedAndOrg = ([SpeciesAbbr], String)
+type SimFluxMap = DM.Map SchedAndOrg RxnFluxMap
 
 -- TODO: *** *** *** read these from Dhall *** *** *** ***
 
@@ -166,6 +172,15 @@ getModel stepr = mxNothingAppZ "getModel" $
     errMsgAt :: Maybe a -> Either String a
     errMsgAt = mayToEi "getModel: couldn't find field"
 
+getRxns :: MultiModel -> AppEnv [String]
+getRxns model = mxNothingAppZ "getRxns" $ do
+  rxnsAA <- model ^. multiModel . mStruct . at "rxns" & errMsgAt & liftEither & mxasZ
+  rxnsCA <- rxnsAA & castMXArray
+  mxCellGetAllListsOfType rxnsCA
+  where
+    errMsgAt :: Maybe a -> Either String a
+    errMsgAt = mayToEi "getRxns: couldn't find field"
+
 getResult :: StepResult -> AppEnv ScomResult
 getResult stepr = mxNothingAppZ "getResult" $
   stepr ^. stepResult . mStruct . at "result" & errMsgAt
@@ -201,6 +216,17 @@ getSpAbbr icom = mxNothingAppZ "getSpAbbr" $ do
   where
     errMsgAt :: Maybe a -> Either String a
     errMsgAt = mayToEi "getSpAbbr: couldn't find field"
+
+getFluxMapAndSp :: StepResult -> AppEnv ([SpeciesAbbr], RxnFluxMap)
+getFluxMapAndSp stepr = mxNothingAppZ "getFluxMapAndSp" $ do
+  result <- getResult stepr
+  mxFlux <- getFlux result
+  flux <- mxArrayGetAll mxFlux
+  model <- getModel stepr
+  rxns <- getRxns model
+  let fMap = DM.fromList $ zip rxns flux
+  spAbbrs <- (getInfoCom >=> getSpAbbr) model
+  pure (spAbbrs, fMap)
 
 mmapToMStruct :: ModelMap -> AppEnv MStruct
 mmapToMStruct m = mxNothingAppZ "mmapToMStruct" $ do
@@ -486,7 +512,7 @@ app = do
 
   all5map <- readModelMap
   -- let orgs = all5map & DM.keys
-  let orgs = coerce ["AT", "LB", "LP"]
+  let orgs = coerce ["AF", "AP", "AT", "LB", "LP"]
   let allScheds = permutations orgs
   printLn $ "DEBUG: organism set is " <> (spAbbToCommName orgs)
   allSchedRes <- forM allScheds $ \sched -> runSemiDynamicSteadyCom all5map sched Nothing
@@ -495,6 +521,30 @@ app = do
 
 --- HeatMap Table
 
+makeFluxMap :: [ScheduleResult] -> AppEnv SimFluxMap
+makeFluxMap allScheds = foldrM insertSFM DM.empty allScheds
+  where
+    insertSFM :: ScheduleResult -> SimFluxMap -> AppEnv SimFluxMap
+    insertSFM sr sfm = do
+      lastStepMay <- sr & getStepLast & mxToMaybeZ
+      steps <- getSteps sr
+      lastOrgKeys <- maybe (pure []) (getModel >=> getInfoCom >=> getSpAbbr) lastStepMay
+      let schedName = spAbbToCommName lastOrgKeys
+      spAbbrsAndFmaps <- traverse getFluxMapAndSp steps
+      let stepMap = DM.fromList $ (first (\sps -> (sps, schedName))) <$> spAbbrsAndFmaps
+      pure $ DM.union stepMap sfm
+
+
+
+-- makeFluxTable :: SimFluxMap -> CsvMat
+-- makeFluxTable sfMap = table
+
+--   where
+    
+--     mkIndex :: Int -> SchedAndOrg -> String -> (Integer, Integer)
+--     mkIndex nRxns commAndOrg rxn = (?, ?)
+
+-- FIXME: not working yet due to underlying library code issue (haskell-matlab handling containers.Map)
 readRxnGroups :: ReactionType -> AppEnv (DM.Map String [String])
 readRxnGroups rxnType = do
   resMMap :: MXMap <- engineEvalFun mxRgFun [] 1

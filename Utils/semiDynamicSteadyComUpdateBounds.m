@@ -10,11 +10,13 @@ function newLB = semiDynamicSteadyComUpdateBounds(model, modelPrior, fluxPrior, 
   for ri = 1:length(nonEssRxns)
     neRxn = nonEssRxns{ri};
     rxnIxPrior = find(strcmp(modelPrior.rxns, neRxn));
-    rxnIxCurr = find(strcmp(model.rxns, neRxn));
+rxnIxCurr = find(strcmp(model.rxns, neRxn));
     % It is being consumed priorly, so we constrain to zero
-    if fluxPrior(rxnIxPrior) < -fluxThresh
-      % newLB(rxnIxCurr) = 0;
-      newLB(rxnIxCurr) =  0.2 * fluxPrior(rxnIxPrior);
+    if numel(fluxPrior) > 0
+      if fluxPrior(rxnIxPrior) < -fluxThresh
+        % newLB(rxnIxCurr) = 0;
+        newLB(rxnIxCurr) =  0.2 * fluxPrior(rxnIxPrior);
+      end
     end    
   end
 end
