@@ -18,6 +18,7 @@ import Data.List (permutations)
 import           Data.Maybe (fromMaybe)
 import           Data.Time.Clock
 import           Data.Time.Calendar
+import           Data.Sort (sortOn)
 import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUID4
 import           Foreign.Matlab
@@ -81,8 +82,8 @@ makeLenses ''SteadyComOpts
 type ModelMap = DM.Map SpeciesAbbr Model
 
 type RxnFluxMap = DM.Map String MDouble
-type SchedAndOrg = ([SpeciesAbbr], String)
-type SimFluxMap = DM.Map SchedAndOrg RxnFluxMap
+type SchedAndOrgs = ([SpeciesAbbr], [SpeciesAbbr])
+type SimFluxMap = DM.Map SchedAndOrgs RxnFluxMap
 
 -- TODO: *** *** *** read these from Dhall *** *** *** ***
 
@@ -529,20 +530,31 @@ makeFluxMap allScheds = foldrM insertSFM DM.empty allScheds
       lastStepMay <- sr & getStepLast & mxToMaybeZ
       steps <- getSteps sr
       lastOrgKeys <- maybe (pure []) (getModel >=> getInfoCom >=> getSpAbbr) lastStepMay
-      let schedName = spAbbToCommName lastOrgKeys
       spAbbrsAndFmaps <- traverse getFluxMapAndSp steps
-      let stepMap = DM.fromList $ (first (\sps -> (sps, schedName))) <$> spAbbrsAndFmaps
+      let stepMap = DM.fromList $ (first (\sps -> (sps, lastOrgKeys))) <$> spAbbrsAndFmaps
       pure $ DM.union stepMap sfm
 
 
 
--- makeFluxTable :: SimFluxMap -> CsvMat
--- makeFluxTable sfMap = table
-
---   where
-    
---     mkIndex :: Int -> SchedAndOrg -> String -> (Integer, Integer)
---     mkIndex nRxns commAndOrg rxn = (?, ?)
+makeFluxTable :: SimFluxMap -> [String] -> CsvMat
+makeFluxTable sfMap orderedRxns = foldr updateTable DM.empty sfKeys
+  where
+    rxnIx = DM.fromList $ zip orderedRxns [1..]
+    sfKeys = sortOn (second length) $ DM.keys sfMap
+    sfKeyIx = DM.fromList $ zip sfKeys [1..]
+    nRxns = length orderedRxns
+    mkIndex :: SchedAndOrgs -> String -> (Integer, Integer)
+    mkIndex schedAndOrgs rxn = (sfKeyIx DM.! schedAndOrgs, rxnIx DM.! rxn)
+    updateTable :: SchedAndOrgs -> CsvMat -> CsvMat
+    updateTable soKey tbl = foldr updateTblInner tbl fmRxns
+      where
+        fluxMap = sfMap DM.! soKey
+        fmRxns = DM.keys fluxMap
+        updateTblInner :: String -> CsvMat -> CsvMat
+        updateTblInner rxn t = DM.insert
+          (mkIndex soKey rxn)
+          (show $ fluxMap DM.! rxn)
+          t
 
 -- FIXME: not working yet due to underlying library code issue (haskell-matlab handling containers.Map)
 readRxnGroups :: ReactionType -> AppEnv (DM.Map String [String])
