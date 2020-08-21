@@ -32,9 +32,54 @@ import           Data.List (intercalate)
 import           Data.Map.Lens
 import qualified Data.Map.Strict as DM
 import           Path
+import           System.Environment (getArgs)
 import           Turtle (decodeString)
 import           Turtle.Prelude (mktree)
 import           ZIO.Trans
+
+
+-- TODO: Extract this to a very simple library?
+
+type CsvMat = DM.Map (Integer, Integer) String
+
+data CsvMatConf = CsvMatConf {
+  delim :: String
+, emptyCell :: String
+} deriving (Eq, Show)
+
+defCsvMatConf :: CsvMatConf
+defCsvMatConf = CsvMatConf {
+  delim = ","
+, emptyCell = ""
+}
+
+class HasCsvMatConf r where
+  getCsvMatConf :: r -> CsvMatConf
+
+writeCsv :: forall b r. HasCsvMatConf r
+  => CsvMat -> Path b File -> ZIO r SomeNonPseudoException ()
+writeCsv cmat fPath = go minRow indices
+  where
+    minFold :: Foldable t => t Integer -> Integer
+    minFold = foldr min 0
+    maxFold :: Foldable t => t Integer -> Integer
+    maxFold = foldr max 0
+    minRow = cmat & DM.keys <&> fst & minFold
+    maxRow = cmat & DM.keys <&> fst & maxFold
+    minCol = cmat & DM.keys <&> snd & minFold
+    maxCol = cmat & DM.keys <&> snd & maxFold
+    indices = [ (x,y) | x <- [minRow..maxRow], y <- [minCol..maxCol] ]
+    go :: Integer -> [(Integer, Integer)] -> ZIO r SomeNonPseudoException ()
+    go _ [] = pure ()
+    go lastRow (ix:ixs) = do
+      cmConf <- ask <&> getCsvMatConf
+      let (rowIxs, restIxs) = span (\i -> fst i > lastRow) (ix:ixs)
+      let entryStrs = (\i -> DM.findWithDefault (emptyCell cmConf) i cmat) <$> rowIxs
+      let row = intercalate (delim cmConf) entryStrs
+      writeFile fPath (row <> "\n")
+      go (fst ix) restIxs
+
+---- End CSV lib
 
 
 --TODO: move these two to haskell-matlab or even ZIO; generalize to all string-wrapping errors
@@ -111,9 +156,14 @@ analysisSubDir = [reldir|analysis/PriorityEffects/semiDynamicSC|]
 modelDir :: Path Rel Dir
 modelDir = [reldir|models|]
 
--- This one is OK hardcoded
 logFile :: Path Rel File
 logFile = [relfile|log_prioSims.txt|]
+
+logFileAnalysis :: Path Rel File
+logFileAnalysis = [relfile|log_prioSimsAnalysis.txt|]
+
+heatMapAllFluxFile :: Path Rel File
+heatMapAllFluxFile = [relfile|heatMap_allFlux.csv|]
 
 data Env = Env {
     _eCobraDir :: Path Abs Dir
@@ -121,6 +171,7 @@ data Env = Env {
   , _eAnalysisDir :: Path Abs Dir
   , _eEngine :: Engine
   , _eModelLoc :: ModelCoords
+  , _csvMatConf :: CsvMatConf
 } deriving Eq
 makeLenses ''Env
 
@@ -135,6 +186,9 @@ instance HasCobraDir Env where
 
 instance SetCobraDir Env where
   setCobraDir env cDir = env {_eCobraDir= cDir}
+
+instance HasCsvMatConf Env where
+  getCsvMatConf = _csvMatConf
 
 zslift :: IO a -> ZIO r String a
 zslift = (mapZError show) . zlift
@@ -431,7 +485,7 @@ runSemiDynamicSteadyCom
   (schedule :: [SpeciesAbbr])
   (optsOverride :: Maybe SteadyComOpts) = do
     origFeasTol <- getLpFeasTol
-    setLpFeasTol 1e-8
+    setLpFeasTol 1e-5
     emptySchedRes <- ScheduleResult <$> fromListIO []
     schedRes <- semiDynamicSteadyCom
       modelMap
@@ -474,6 +528,13 @@ saveSchedRes resDir orgs srs = do
     pure $ (stepName, sr ^. scheduleResult)
   matSave (resDir </> fileRel) namesAndRes
 
+loadSchedRes :: Path b File -> AppEnv [ScheduleResult]
+loadSchedRes resFile = do
+  varAAs <- (fmap snd) <$> matLoad resFile
+  varCAs <- traverse castMXArray varAAs
+  pure $ ScheduleResult <$> varCAs
+  
+
 -- | Creates a results folder under the analysis folder and returns its Path.
 makeResultFolder :: AppEnv (Path Abs Dir)
 makeResultFolder = do
@@ -492,15 +553,21 @@ makeResultFolder = do
   mkdirp resPath
   pure resPath
 
+getResultPath :: String -> AppEnv (Path Abs Dir)
+getResultPath folderStr = do
+  env <- ask
+  resDir <- mxaeZ $ zlift $ parseRelDir folderStr
+  let resPath = (env ^. eAnalysisDir) </> resDir
+  pure resPath
+
 -- A util function
 mkdirp :: Path b Dir -> AppEnv ()
 mkdirp p = mxaeZ $ zlift $ mktree $ decodeString $ toFilePath p
 
-app :: AppEnv ()
-app = do
+schedulePrioSims :: AppEnv ()
+schedulePrioSims = do
   env <- ask
   let eng = getEngine env
-  let analysisDir = _eAnalysisDir env
   resFolder <- makeResultFolder
   diaryFile $ resFolder </> logFile
   diaryOn
@@ -515,10 +582,50 @@ app = do
   -- let orgs = all5map & DM.keys
   let orgs = coerce ["AF", "AP", "AT", "LB", "LP"]
   let allScheds = permutations orgs
+  -- let allScheds = [coerce $ ["AP", "LP", "AF", "AT", "LB"]] -- DEBUG
   printLn $ "DEBUG: organism set is " <> (spAbbToCommName orgs)
   allSchedRes <- forM allScheds $ \sched -> runSemiDynamicSteadyCom all5map sched Nothing
   saveSchedRes resFolder orgs allSchedRes
 
+
+prioEffectAnalysis :: AppEnv ()
+prioEffectAnalysis = do
+  args <- mxaeZ $ zlift $ getArgs
+  case args of
+    (resDirStr:schedResFileStr:_) -> do
+      resPath <- getResultPath resDirStr
+      diaryFile $ resPath </> logFileAnalysis
+      diaryOn
+      printLn "Check 3"
+
+      -- Shouldn't need COBRA Toolobox for this:
+      initHSMatlabEngineEnv [initDMM]
+      schedResFile <- mxaeZ $ zlift $ parseRelFile schedResFileStr
+        
+      let srFile = resPath </> schedResFile
+      allSchedRes <- loadSchedRes srFile
+      sfMap <- makeFluxMap allSchedRes
+      printLn "Check 6"
+      srHead <- headZ "No Schedule Results loaded" allSchedRes
+      lastStep <- srHead & getStepLast
+      modelWithAllOrgs <- getModel lastStep
+      rxns <- getRxns modelWithAllOrgs
+      let tbl = makeFluxTable sfMap rxns
+      printLn "Check 9"
+      mxaeZ $ writeCsv tbl (resPath </> heatMapAllFluxFile)
+      printLn "Check 12"
+    _ -> throwError $ MXNothing "Need at least 2 arguments (result folder, mat file)"
+
+  
+defaultEnv :: Engine -> Env
+defaultEnv eng = Env {
+  _eCobraDir = userCobraDir
+, _eProjDir = projectDir
+, _eAnalysisDir = projectDir </> analysisSubDir
+, _eEngine = eng
+, _eModelLoc = analysisModList
+, _csvMatConf = defCsvMatConf
+}
 
 --- HeatMap Table
 
@@ -572,42 +679,3 @@ readRxnGroups rxnType = do
 -- genHMTable :: rxnGroups, isTrans
 
 
--- TODO: Extract this to a very simple library?
-
-type CsvMat = DM.Map (Integer, Integer) String
-
-data CsvMatConf = CsvMatConf {
-  delim :: String
-, emptyCell :: String
-}
-
-class HasCsvMatConf r where
-  csvMatConf :: r -> CsvMatConf
-defCsvMatConf :: CsvMatConf
-defCsvMatConf = CsvMatConf {
-  delim = ","
-, emptyCell = ""
-}
-
-writeCsv :: forall b r. HasCsvMatConf r
-  => CsvMat -> Path b File -> ZIO r SomeNonPseudoException ()
-writeCsv cmat fPath = go minRow indices
-  where
-    minFold :: Foldable t => t Integer -> Integer
-    minFold = foldr min 0
-    maxFold :: Foldable t => t Integer -> Integer
-    maxFold = foldr max 0
-    minRow = cmat & DM.keys <&> fst & minFold
-    maxRow = cmat & DM.keys <&> fst & maxFold
-    minCol = cmat & DM.keys <&> snd & minFold
-    maxCol = cmat & DM.keys <&> snd & maxFold
-    indices = [ (x,y) | x <- [minRow..maxRow], y <- [minCol..maxCol] ]
-    go :: Integer -> [(Integer, Integer)] -> ZIO r SomeNonPseudoException ()
-    go _ [] = pure ()
-    go lastRow (ix:ixs) = do
-      cmConf <- ask <&> csvMatConf
-      let (rowIxs, restIxs) = span (\i -> fst i > lastRow) (ix:ixs)
-      let entryStrs = (\i -> DM.findWithDefault (emptyCell cmConf) i cmat) <$> rowIxs
-      let row = intercalate (delim cmConf) entryStrs
-      writeFile fPath (row <> "\n")
-      go (fst ix) restIxs
