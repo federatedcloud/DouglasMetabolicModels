@@ -7,7 +7,7 @@
 
 module COBRA.PriorityEffects where
 
-import           Prelude hiding (writeFile)
+import           Prelude hiding (appendFile, writeFile)
 import           Control.Arrow ((>>>))
 import           Control.Lens
 import           Control.Monad (join)
@@ -58,7 +58,9 @@ class HasCsvMatConf r where
 
 writeCsv :: forall b r. HasCsvMatConf r
   => CsvMat -> Path b File -> ZIO r SomeNonPseudoException ()
-writeCsv cmat fPath = go minRow indices
+writeCsv cmat fPath = do
+  writeFile fPath ""
+  go indices
   where
     minFold :: Foldable t => t Integer -> Integer
     minFold = foldr min 0
@@ -69,15 +71,15 @@ writeCsv cmat fPath = go minRow indices
     minCol = cmat & DM.keys <&> snd & minFold
     maxCol = cmat & DM.keys <&> snd & maxFold
     indices = [ (x,y) | x <- [minRow..maxRow], y <- [minCol..maxCol] ]
-    go :: Integer -> [(Integer, Integer)] -> ZIO r SomeNonPseudoException ()
-    go _ [] = pure ()
-    go lastRow (ix:ixs) = do
+    go :: [(Integer, Integer)] -> ZIO r SomeNonPseudoException ()
+    go [] = pure ()
+    go (ix:ixs) = do
       cmConf <- ask <&> getCsvMatConf
-      let (rowIxs, restIxs) = span (\i -> fst i > lastRow) (ix:ixs)
+      let (rowIxs, restIxs) = span (\i -> fst i == fst ix) (ix:ixs)
       let entryStrs = (\i -> DM.findWithDefault (emptyCell cmConf) i cmat) <$> rowIxs
       let row = intercalate (delim cmConf) entryStrs
-      writeFile fPath (row <> "\n")
-      go (fst ix) restIxs
+      appendFile fPath (row <> "\n")
+      go restIxs
 
 ---- End CSV lib
 
@@ -581,8 +583,9 @@ schedulePrioSims = do
   all5map <- readModelMap
   -- let orgs = all5map & DM.keys
   let orgs = coerce ["AF", "AP", "AT", "LB", "LP"]
-  let allScheds = permutations orgs
-  -- let allScheds = [coerce $ ["AP", "LP", "AF", "AT", "LB"]] -- DEBUG
+  -- let allScheds = permutations orgs
+  -- LP_AP_AT_AF_LB
+  let allScheds = [coerce $ ["LP", "AP", "AT", "AF", "LB"]] -- DEBUG
   printLn $ "DEBUG: organism set is " <> (spAbbToCommName orgs)
   allSchedRes <- forM allScheds $ \sched -> runSemiDynamicSteadyCom all5map sched Nothing
   saveSchedRes resFolder orgs allSchedRes
@@ -596,7 +599,6 @@ prioEffectAnalysis = do
       resPath <- getResultPath resDirStr
       diaryFile $ resPath </> logFileAnalysis
       diaryOn
-      printLn "Check 3"
 
       -- Shouldn't need COBRA Toolobox for this:
       initHSMatlabEngineEnv [initDMM]
@@ -605,13 +607,11 @@ prioEffectAnalysis = do
       let srFile = resPath </> schedResFile
       allSchedRes <- loadSchedRes srFile
       sfMap <- makeFluxMap allSchedRes
-      printLn "Check 6"
       srHead <- headZ "No Schedule Results loaded" allSchedRes
       lastStep <- srHead & getStepLast
       modelWithAllOrgs <- getModel lastStep
       rxns <- getRxns modelWithAllOrgs
       let tbl = makeFluxTable sfMap rxns
-      printLn "Check 9"
       mxaeZ $ writeCsv tbl (resPath </> heatMapAllFluxFile)
       printLn "Check 12"
     _ -> throwError $ MXNothing "Need at least 2 arguments (result folder, mat file)"
