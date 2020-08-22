@@ -31,7 +31,6 @@ import           COBRA
 import           Data.List (intercalate)
 import           Data.Map.Lens
 import qualified Data.Map.Strict as DM
-import           Debug.Trace (trace)
 import           Path
 import           System.Environment (getArgs)
 import           Turtle (decodeString)
@@ -641,26 +640,24 @@ makeFluxMap allScheds = foldrM insertSFM DM.empty allScheds
       let stepMap = DM.fromList $ (first (\sps -> (lastOrgKeys, sps))) <$> spAbbrsAndFmaps
       pure $ DM.union stepMap sfm
 
-
-
 makeFluxTable :: SimFluxMap -> [String] -> CsvMat
 makeFluxTable sfMap orderedRxns = foldr updateTable tblCRH sfKeys
   where
     tblCH = applyHeaders mkColHs colHeaders DM.empty
     tblCRH = applyHeaders mkRowHs rowHeaders tblCH
     rxnIx = DM.fromList $ zip orderedRxns [0..]
-    sfKeys0 = sortOn (second length) $ DM.keys sfMap
-    sfKeys = trace ("keys are: " <> (show (coerce sfKeys0 :: [([String], [String])]))) sfKeys0
+    sfKeys = sortOn (second length) $ DM.keys sfMap
     sfKeyIx = DM.fromList $ zip sfKeys [0..]
-    sfHeaderTups = (\k -> (spAbbToCommName $ fst k, spAbbToCommName $ snd k)) <$> sfKeys
+    mkSp = spAbbToCommName . reverse . coerce
+    sfHeaderTups = (\k -> (mkSp $ fst k, mkSp $ snd k)) <$> sfKeys
     schedHeader = fst <$> sfHeaderTups
     commHeader = snd <$> sfHeaderTups
-    rowHeaders = [schedHeader, commHeader]
-    colHeaders = [orderedRxns]
+    rowHeaders = [orderedRxns]
+    colHeaders = [schedHeader, commHeader]
     nRxns = length orderedRxns
     mkIndex :: SchedAndOrgs -> String -> (Integer, Integer)
     mkIndex schedAndOrgs rxn =
-      (nColHeads + sfKeyIx DM.! schedAndOrgs, nRowHeads + rxnIx DM.! rxn)
+      (nColHeads + rxnIx DM.! rxn, nRowHeads + sfKeyIx DM.! schedAndOrgs)
     nRowHeads = toInteger $ length rowHeaders
     nColHeads = toInteger $ length colHeaders
     applyHeaders :: (Integer -> [String] -> CsvMat) -> [[String]] -> CsvMat -> CsvMat
