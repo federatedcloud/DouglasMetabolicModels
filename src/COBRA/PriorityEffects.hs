@@ -31,6 +31,7 @@ import           COBRA
 import           Data.List (intercalate)
 import           Data.Map.Lens
 import qualified Data.Map.Strict as DM
+import           Debug.Trace (trace)
 import           Path
 import           System.Environment (getArgs)
 import           Turtle (decodeString)
@@ -613,7 +614,6 @@ prioEffectAnalysis = do
       rxns <- getRxns modelWithAllOrgs
       let tbl = makeFluxTable sfMap rxns
       mxaeZ $ writeCsv tbl (resPath </> heatMapAllFluxFile)
-      printLn "Check 12"
     _ -> throwError $ MXNothing "Need at least 2 arguments (result folder, mat file)"
 
   
@@ -638,20 +638,40 @@ makeFluxMap allScheds = foldrM insertSFM DM.empty allScheds
       steps <- getSteps sr
       lastOrgKeys <- maybe (pure []) (getModel >=> getInfoCom >=> getSpAbbr) lastStepMay
       spAbbrsAndFmaps <- traverse getFluxMapAndSp steps
-      let stepMap = DM.fromList $ (first (\sps -> (sps, lastOrgKeys))) <$> spAbbrsAndFmaps
+      let stepMap = DM.fromList $ (first (\sps -> (lastOrgKeys, sps))) <$> spAbbrsAndFmaps
       pure $ DM.union stepMap sfm
 
 
 
 makeFluxTable :: SimFluxMap -> [String] -> CsvMat
-makeFluxTable sfMap orderedRxns = foldr updateTable DM.empty sfKeys
+makeFluxTable sfMap orderedRxns = foldr updateTable tblCRH sfKeys
   where
-    rxnIx = DM.fromList $ zip orderedRxns [1..]
-    sfKeys = sortOn (second length) $ DM.keys sfMap
-    sfKeyIx = DM.fromList $ zip sfKeys [1..]
+    tblCH = applyHeaders mkColHs colHeaders DM.empty
+    tblCRH = applyHeaders mkRowHs rowHeaders tblCH
+    rxnIx = DM.fromList $ zip orderedRxns [0..]
+    sfKeys0 = sortOn (second length) $ DM.keys sfMap
+    sfKeys = trace ("keys are: " <> (show (coerce sfKeys0 :: [([String], [String])]))) sfKeys0
+    sfKeyIx = DM.fromList $ zip sfKeys [0..]
+    sfHeaderTups = (\k -> (spAbbToCommName $ fst k, spAbbToCommName $ snd k)) <$> sfKeys
+    schedHeader = fst <$> sfHeaderTups
+    commHeader = snd <$> sfHeaderTups
+    rowHeaders = [schedHeader, commHeader]
+    colHeaders = [orderedRxns]
     nRxns = length orderedRxns
     mkIndex :: SchedAndOrgs -> String -> (Integer, Integer)
-    mkIndex schedAndOrgs rxn = (sfKeyIx DM.! schedAndOrgs, rxnIx DM.! rxn)
+    mkIndex schedAndOrgs rxn =
+      (nColHeads + sfKeyIx DM.! schedAndOrgs, nRowHeads + rxnIx DM.! rxn)
+    nRowHeads = toInteger $ length rowHeaders
+    nColHeads = toInteger $ length colHeaders
+    applyHeaders :: (Integer -> [String] -> CsvMat) -> [[String]] -> CsvMat -> CsvMat
+    applyHeaders go hss tbl = DM.union
+      (DM.unions $ (\hs -> go (fst hs) (snd hs)) <$> hsIxed hss)
+      tbl
+    hsIxed hs = zip [0..] hs
+    mkColHs :: Integer -> [String] -> CsvMat
+    mkColHs ix hs = DM.fromList $ zip (zip (repeat ix) [nRowHeads..]) hs
+    mkRowHs :: Integer -> [String] -> CsvMat
+    mkRowHs ix hs = DM.fromList $ zip (zip [nColHeads..] (repeat ix)) hs
     updateTable :: SchedAndOrgs -> CsvMat -> CsvMat
     updateTable soKey tbl = foldr updateTblInner tbl fmRxns
       where
