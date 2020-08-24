@@ -588,10 +588,11 @@ schedulePrioSims = do
   printLn $ "DEBUG: organism set is " <> (spAbbToCommName orgs)
   allSchedRes <- forM allScheds $ \sched -> runSemiDynamicSteadyCom all5map sched Nothing
   saveSchedRes resFolder orgs allSchedRes
+  prioEffectAnalysis allSchedRes resFolder
 
 
-prioEffectAnalysis :: AppEnv ()
-prioEffectAnalysis = do
+prioEffectAnalysisApp :: AppEnv ()
+prioEffectAnalysisApp = do
   args <- mxaeZ $ zlift $ getArgs
   case args of
     (resDirStr:schedResFileStr:_) -> do
@@ -605,16 +606,21 @@ prioEffectAnalysis = do
         
       let srFile = resPath </> schedResFile
       allSchedRes <- loadSchedRes srFile
-      sfMap <- makeFluxMap allSchedRes
-      srHead <- headZ "No Schedule Results loaded" allSchedRes
-      lastStep <- srHead & getStepLast
-      modelWithAllOrgs <- getModel lastStep
-      rxns <- getRxns modelWithAllOrgs
-      let tbl = makeFluxTable sfMap rxns
-      mxaeZ $ writeCsv tbl (resPath </> heatMapAllFluxFile)
+      prioEffectAnalysis allSchedRes resPath
     _ -> throwError $ MXNothing "Need at least 2 arguments (result folder, mat file)"
 
-  
+
+prioEffectAnalysis :: [ScheduleResult] -> Path b Dir -> AppEnv ()
+prioEffectAnalysis allSchedRes resPath = do
+  sfMap <- makeFluxMap allSchedRes
+  srHead <- headZ "No Schedule Results loaded" allSchedRes
+  lastStep <- srHead & getStepLast
+  modelWithAllOrgs <- getModel lastStep
+  rxns <- getRxns modelWithAllOrgs
+  let tbl = makeFluxTable sfMap rxns
+  mxaeZ $ writeCsv tbl (resPath </> heatMapAllFluxFile)
+
+
 defaultEnv :: Engine -> Env
 defaultEnv eng = Env {
   _eCobraDir = userCobraDir

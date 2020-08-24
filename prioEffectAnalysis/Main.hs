@@ -7,7 +7,7 @@ import           ZIO.Trans
 main :: IO ()
 main = do
   eng <- newEngine ""
-  runApp prioEffectAnalysis (defaultEnv eng)
+  runApp prioEffectAnalysisApp (defaultEnv eng)
   where
     runApp a r = runZIO a r (putStrLn . show)
 
