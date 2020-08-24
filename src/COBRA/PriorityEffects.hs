@@ -688,7 +688,7 @@ makeFluxTable sfMap orderedRxns = foldr updateTable tblCRH sfKeys
 -- FIXME: not working yet due to underlying library code issue (haskell-matlab handling containers.Map)
 readRxnGroups :: ReactionType -> AppEnv (DM.Map String [String])
 readRxnGroups rxnType = do
-  resMMap :: MXMap <- engineEvalFun mxRgFun [] 1
+  resMMap :: MXMap <- engineEvalEngFun mxRgFun [] 1
     >>= headZ "No results from readTrRxnGroup" <&> MXMap
   rxnGrpMapRaw <- mmapToHmap resMMap
   traverse mxCellGetAllListsOfType rxnGrpMapRaw
@@ -697,7 +697,4 @@ readRxnGroups rxnType = do
     mxRgFun = case rxnType of
       Exchange -> "readExRxnGroups"
       Transport -> "readTrRxnGroups"
-
--- genHMTable :: rxnGroups, isTrans
-
 
