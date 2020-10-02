@@ -584,7 +584,7 @@ schedulePrioSims = do
   -- let orgs = all5map & DM.keys
   let orgs = coerce ["AF", "AP", "AT", "LB", "LP"]
   let allScheds = permutations orgs
-  -- let allScheds = [coerce $ ["LP", "AP", "AT", "AF", "LB"]] -- DEBUG
+  -- let allScheds = [coerce $ ["AP", "LB", "AT", "AF", "LP"]] -- DEBUG
   printLn $ "DEBUG: organism set is " <> (spAbbToCommName orgs)
   allSchedRes <- forM allScheds $ \sched -> runSemiDynamicSteadyCom all5map sched Nothing
   saveSchedRes resFolder orgs allSchedRes
