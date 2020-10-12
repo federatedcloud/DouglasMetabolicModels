@@ -486,8 +486,10 @@ runSemiDynamicSteadyCom
   (modelMap :: ModelMap)
   (schedule :: [SpeciesAbbr])
   (optsOverride :: Maybe SteadyComOpts) = do
-    origFeasTol <- getLpFeasTol
-    setLpFeasTol 1e-5
+    origFeasTol <- getCbFeasTol
+    origOptTol <- getCbOptTol
+    setCbFeasTol 1e-5 -- TODO Bracket
+    setCbOptTol 1e-4  -- TODO Bracket
     emptySchedRes <- ScheduleResult <$> fromListIO []
     schedRes <- semiDynamicSteadyCom
       modelMap
@@ -495,26 +497,44 @@ runSemiDynamicSteadyCom
       emptySchedRes
       optsOverride
       DM.empty
-    setLpFeasTol origFeasTol
+    setCbFeasTol origFeasTol  -- TODO Bracket
+    setCbOptTol origOptTol  -- TODO Bracket
     pure schedRes
 
 --TODO: use bracket to get/set feastol in runSemiDynamicSteadyCom?
 --TODO, but need a ZIO bracket based on: https://hackage.haskell.org/package/unexceptionalio-0.5.1/docs/UnexceptionalIO.html#v:bracket
 
-getLpFeasTol :: AppEnv MDouble
-getLpFeasTol = mxNothingAppZ "getLpFeasTol" $ do
+getCbFeasTol :: AppEnv MDouble
+getCbFeasTol = mxNothingAppZ "getCbFeasTol" $ do
   res <- engineEvalFun "getCobraSolverParams" [
       EvalString "LP"
     , EvalString "feasTol"
-    ] 1 >>= headZ "getLpFeasTol"
+    ] 1 >>= headZ "getCbFeasTol"
   castMXArray res >>= mxScalarGet
 
-setLpFeasTol :: MDouble -> AppEnv ()
-setLpFeasTol ft = do
+getCbOptTol :: AppEnv MDouble
+getCbOptTol = mxNothingAppZ "getCbOptTol" $ do
+  res <- engineEvalFun "getCobraSolverParams" [
+      EvalString "LP"
+    , EvalString "optTol"
+    ] 1 >>= headZ "getCbOptTol"
+  castMXArray res >>= mxScalarGet
+
+setCbFeasTol :: MDouble -> AppEnv ()
+setCbFeasTol ft = do
   ftMX <- createMXScalar ft
   engineEvalProc "changeCobraSolverParams" [
       EvalString "LP"
     , EvalString "feasTol"
+    , EvalArray ftMX
+    ]
+
+setCbOptTol :: MDouble -> AppEnv ()
+setCbOptTol ft = do
+  ftMX <- createMXScalar ft
+  engineEvalProc "changeCobraSolverParams" [
+      EvalString "LP"
+    , EvalString "optTol"
     , EvalArray ftMX
     ]
 
@@ -584,7 +604,7 @@ schedulePrioSims = do
   -- let orgs = all5map & DM.keys
   let orgs = coerce ["AF", "AP", "AT", "LB", "LP"]
   let allScheds = permutations orgs
-  -- let allScheds = [coerce $ ["AP", "LB", "AT", "AF", "LP"]] -- DEBUG
+  -- let allScheds = [coerce $ ["AF", "LP", "AP", "AT", "LB"]] -- DEBUG
   printLn $ "DEBUG: organism set is " <> (spAbbToCommName orgs)
   allSchedRes <- forM allScheds $ \sched -> runSemiDynamicSteadyCom all5map sched Nothing
   saveSchedRes resFolder orgs allSchedRes
