@@ -1,7 +1,0 @@
-13 Feb 2019
-
-	LB.rxns{753}='EX_hcys-L(e)'; # This was updated in both the individual LP.mat and all_5.mat
-
-02 April 2019
-
-	Added minimal.plus_v2_0402192.xlsx, which lists a core set (green) and superset (yello) of reactions to try removing from the minimal plus media in order to obtain smaller minimal media models, as well as to perform analyses on the effects of removal.
