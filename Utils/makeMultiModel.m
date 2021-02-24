@@ -3,7 +3,7 @@ function [multiModel, rxns] = makeMultiModel(modelKeys, modelMap, mediaType)
 %   modelKeys is a cell array of strings that index into modelMap;
 %             these should be the model names.
 %
-%   modelMap is a struct with field names as indices and models as values.
+%   modelMap is a struct or map with field names as indices and models as values.
 %   mediaType: 'rich' (no action after createMultipleSpeciesModel is called),
 %                     highly unconstrained
 %              'minimal-merge': iteratively reapply constraints from constituent
@@ -12,7 +12,8 @@ function [multiModel, rxns] = makeMultiModel(modelKeys, modelMap, mediaType)
 % Authors: Brandon Barker
 
   rxns = {};
-  mediaTypeOptions = {'rich', 'minimal', 'minimal-merge', 'minimal-plus', 'unbounded'};
+  mediaTypeOptions = {'rich', 'minimal', 'minimal-merge',    ...
+		      'minimal-plus', 'unbounded', 'biolog'};
 
   keysSz = size(modelKeys);
   if keysSz(1) == 1
@@ -28,8 +29,11 @@ function [multiModel, rxns] = makeMultiModel(modelKeys, modelMap, mediaType)
   );
   assert(length(intersect({mediaType}, mediaTypeOptions)) == 1, mediaTypeMsg);
 
-  modelsToSim = cellFlatMap(@(k) getfield(modelMap, k), modelKeys);
-
+  if isstruct(modelMap)
+    modelsToSim = cellFlatMap(@(k) getfield(modelMap, k), modelKeys);
+  else
+    modelsToSim = cellFlatMap(@(k) modelMap(k), modelKeys);
+  end
           % Adust so that SteadyCom/createMultiSpecies is happy %
   try
     modelsToSim = cellFlatMap(@(m) rmfield(m, 'metPubChemID'), modelsToSim);
@@ -69,6 +73,8 @@ function [multiModel, rxns] = makeMultiModel(modelKeys, modelMap, mediaType)
     [multiModel, rxns] = createRichModel(multiModel);
   elseif strcmp(mediaType, 'unbounded')
     multiModel = multiModel;
+  elseif strcmp(mediaType, 'biolog')
+    [multiModel, rxns] = createBiologModel(multiModel);
   end
 
   % subsumed by builtin constraints in 04/11/19 models
