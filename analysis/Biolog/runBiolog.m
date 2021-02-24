@@ -1,6 +1,6 @@
 function biologResults = runBiolog(modelKey, modelMap)
 
-minPlusMod = makeMultiModel({modelKey}, modelMap, 'minimal');
+minPlusMod = makeMultiModel({modelKey}, modelMap, 'biolog');
 
 % First set 'EX_glc-D[u]' to 0, then set each of these to -0.05
 minPlusMod = changeRxnBounds(minPlusMod, {'EX_glc-D[u]'}, 0, 'l');

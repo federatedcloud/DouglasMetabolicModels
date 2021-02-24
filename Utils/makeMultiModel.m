@@ -1,10 +1,9 @@
-function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
+function [multiModel, rxns] = makeMultiModel(modelKeys, modelMap, mediaType)
 % makeMultiModel
 %   modelKeys is a cell array of strings that index into modelMap;
 %             these should be the model names.
 %
-%   modelMap is a containers.Map data structer, with key names as
-%            indexes and models as values.
+%   modelMap is a struct or map with field names as indices and models as values.
 %   mediaType: 'rich' (no action after createMultipleSpeciesModel is called),
 %                     highly unconstrained
 %              'minimal-merge': iteratively reapply constraints from constituent
@@ -12,7 +11,9 @@ function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
 %                     from other models in no particular order.
 % Authors: Brandon Barker
 
-  mediaTypeOptions = {'rich', 'minimal', 'minimal-merge', 'minimal-plus', 'unbounded'};
+  rxns = {};
+  mediaTypeOptions = {'rich', 'minimal', 'minimal-merge',    ...
+		      'minimal-plus', 'unbounded', 'biolog'};
 
   keysSz = size(modelKeys);
   if keysSz(1) == 1
@@ -28,8 +29,11 @@ function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
   );
   assert(length(intersect({mediaType}, mediaTypeOptions)) == 1, mediaTypeMsg);
 
-  modelsToSim = cellFlatMap(@(k) modelMap(k), modelKeys);
-
+  if isstruct(modelMap)
+    modelsToSim = cellFlatMap(@(k) getfield(modelMap, k), modelKeys);
+  else
+    modelsToSim = cellFlatMap(@(k) modelMap(k), modelKeys);
+  end
           % Adust so that SteadyCom/createMultiSpecies is happy %
   try
     modelsToSim = cellFlatMap(@(m) rmfield(m, 'metPubChemID'), modelsToSim);
@@ -62,13 +66,15 @@ function multiModel = makeMultiModel(modelKeys, modelMap, mediaType)
       disp(horzcat(multiModel.rxns(afterMisses), multiModel.rxnNames(afterMisses)));
     end
   elseif strcmp(mediaType, 'minimal-plus')
-    multiModel = createMinimalPlusModel(multiModel);
+    [multiModel, rxns] = createMinimalPlusModel(multiModel);
   elseif strcmp(mediaType, 'minimal')
-    multiModel = createMinModel(multiModel);
+    [multiModel, rxns] = createMinModel(multiModel);
   elseif strcmp(mediaType, 'rich')
-    multiModel = createRichModel(multiModel);
+    [multiModel, rxns] = createRichModel(multiModel);
   elseif strcmp(mediaType, 'unbounded')
     multiModel = multiModel;
+  elseif strcmp(mediaType, 'biolog')
+    [multiModel, rxns] = createBiologModel(multiModel);
   end
 
   % subsumed by builtin constraints in 04/11/19 models
